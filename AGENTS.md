@@ -22,7 +22,25 @@ flutter test                 # run all tests
 flutter run                  # run on connected device
 flutter build apk --release  # build Android APK (primary target)
 flutter build appbundle      # build for Play Store
+
+# Firebase
+firebase deploy --only functions   # deploy Cloud Functions
+firebase deploy --only firestore   # deploy Firestore rules + indexes
+firebase deploy --only storage     # deploy Storage rules
 ```
+
+## Firebase Setup (One Time)
+1. Create project at `console.firebase.google.com` named `eid-wahda`
+2. Enable **Phone Auth** in Authentication → Sign-in method
+3. Register Android app with package `app_delivery` → download `google-services.json` → place in `android/app/`
+4. Run `flutterfire configure` (or manually add iOS/Web config)
+5. Deploy functions: `cd functions && npm install && cd .. && firebase deploy --only functions`
+6. Seed categories collection from Firestore console or a seed script
+
+## Cloud Functions
+`functions/index.js` contains:
+- `matchProvider` — auto-assigns nearest/least-loaded provider to new orders
+- `updateProviderRating` — recalculates average rating on new review
 
 ## Conventions
 - Arabic-first: all user-facing strings in Arabic, RTL layout
@@ -36,13 +54,26 @@ flutter build appbundle      # build for Play Store
 lib/
 ├── main.dart              # entrypoint (customer app)
 ├── providers/             # provider-side app (separate)
-├── core/                  # shared theme, constants, localization
+├── core/                  # shared theme, constants, routes, firebase init
 ├── features/              # feature modules
 │   ├── auth/
+│   │   ├── screens/       # login_screen, otp_screen
+│   │   └── services/      # auth_service (Firebase phone auth)
 │   ├── orders/
+│   │   ├── screens/       # new_order, order_tracking, order_history
+│   │   └── services/      # order_service (Firestore CRUD)
 │   ├── services/
-│   └── payments/
-└── models/
+│   ├── payments/
+│   └── profile/
+│       └── screens/       # profile_screen
+├── models/                # user, provider, order, review, category
+
+functions/
+├── index.js               # Cloud Functions (matchProvider, updateProviderRating)
+└── package.json
+
+firestore.rules            # Firestore security rules
+storage.rules              # Storage security rules
 ```
 
 ## Key Constraints
