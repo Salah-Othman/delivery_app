@@ -42,8 +42,13 @@ dependencies:
   firebase_storage: ^12.4.4
   cloud_functions: ^5.3.4
 
+  # State management
+  flutter_bloc: ^9.1.0
+  equatable: ^2.0.0
+
   # Utilities
   google_maps_flutter: ^2.12.0
+  google_sign_in: ^6.3.0
 
 dev_dependencies:
   flutter_test:
