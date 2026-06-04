@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "392878462274",
+    "project_id": "eid-wahda",
+    "storage_bucket": "eid-wahda.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:392878462274:android:b145f73ccd537cc30424db",
+        "android_client_info": {
+          "package_name": "com.example.app_delivery"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCX108aXZhD4kb1lL4cuEneuCdhU0vIV5M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
