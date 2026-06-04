@@ -47,6 +47,7 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
+<<<<<<< HEAD
   Future<void> signInWithGoogle() async {
     emit(const AuthLoading());
     try {
@@ -67,6 +68,8 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
+=======
+>>>>>>> bbc6f8fa6ca2b08fd8d4f51b35938d2a6ba1a1ee
   Future<void> signOut() async {
     await _authService.signOut();
     emit(const AuthInitial());
@@ -80,9 +83,12 @@ class AuthCubit extends Cubit<AuthState> {
     if (msg.contains('too-many-requests')) return 'حاول مرة أخرى بعد قليل';
     if (msg.contains('invalid-verification-code')) return 'رمز التحقق غير صحيح';
     if (msg.contains('network-request-failed')) return 'مشكلة في الاتصال، حاول مرة أخرى';
+<<<<<<< HEAD
     if (msg.contains('account-exists-with-different-credential')) {
       return 'هذا الحساب مرتبط بطريقة تسجيل دخول أخرى';
     }
+=======
+>>>>>>> bbc6f8fa6ca2b08fd8d4f51b35938d2a6ba1a1ee
     return 'حدث خطأ، حاول مرة أخرى';
   }
 }
