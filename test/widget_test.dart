@@ -27,7 +27,8 @@ void main() {
     );
 
     expect(find.text('إيد واحدة'), findsOneWidget);
-    expect(find.text('تسجيل الدخول'), findsOneWidget);
+    expect(find.text('تسجيل الدخول برقم الموبايل'), findsOneWidget);
+    expect(find.text('تسجيل الدخول بواسطة Google'), findsOneWidget);
     expect(find.text('رقم الموبايل'), findsOneWidget);
   });
 }

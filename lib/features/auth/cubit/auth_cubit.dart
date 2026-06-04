@@ -47,6 +47,26 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
+  Future<void> signInWithGoogle() async {
+    emit(const AuthLoading());
+    try {
+      await _authService.signInWithGoogle();
+      final user = _authService.currentUser();
+      if (user != null) {
+        emit(AuthVerified(user: user));
+      } else {
+        emit(const AuthError(message: 'حدث خطأ، حاول مرة أخرى'));
+      }
+    } catch (e) {
+      final msg = e.toString();
+      if (msg.contains('user-cancelled') || msg.contains('CANCELED')) {
+        emit(const AuthInitial());
+      } else {
+        emit(AuthError(message: _errorMessage(e)));
+      }
+    }
+  }
+
   Future<void> signOut() async {
     await _authService.signOut();
     emit(const AuthInitial());
@@ -60,6 +80,9 @@ class AuthCubit extends Cubit<AuthState> {
     if (msg.contains('too-many-requests')) return 'حاول مرة أخرى بعد قليل';
     if (msg.contains('invalid-verification-code')) return 'رمز التحقق غير صحيح';
     if (msg.contains('network-request-failed')) return 'مشكلة في الاتصال، حاول مرة أخرى';
+    if (msg.contains('account-exists-with-different-credential')) {
+      return 'هذا الحساب مرتبط بطريقة تسجيل دخول أخرى';
+    }
     return 'حدث خطأ، حاول مرة أخرى';
   }
 }

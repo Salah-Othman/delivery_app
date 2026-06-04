@@ -112,7 +112,58 @@ class _LoginScreenState extends State<LoginScreen> {
                                   color: Colors.white,
                                 ),
                               )
-                            : const Text('تسجيل الدخول'),
+                            : const Text('تسجيل الدخول برقم الموبايل'),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Divider(
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        'أو',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color:
+                                  Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Divider(
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                BlocBuilder<AuthCubit, AuthState>(
+                  builder: (context, state) {
+                    final loading = state is AuthLoading;
+                    return SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: OutlinedButton.icon(
+                        onPressed: loading
+                            ? null
+                            : () => context
+                                .read<AuthCubit>()
+                                .signInWithGoogle(),
+                        icon: Image.asset(
+                          'assets/google_logo.png',
+                          height: 20,
+                          errorBuilder: (_, _, _) => const Icon(
+                            Icons.g_mobiledata_rounded,
+                            size: 28,
+                          ),
+                        ),
+                        label: const Text('تسجيل الدخول بواسطة Google'),
                       ),
                     );
                   },

@@ -1,6 +1,7 @@
 class UserModel {
   final String id;
   final String phone;
+  final String? email;
   final String? name;
   final String? address;
   final double? lat;
@@ -11,6 +12,7 @@ class UserModel {
   UserModel({
     required this.id,
     required this.phone,
+    this.email,
     this.name,
     this.address,
     this.lat,
@@ -22,6 +24,7 @@ class UserModel {
   Map<String, dynamic> toMap() => {
         'id': id,
         'phone': phone,
+        'email': email,
         'name': name,
         'address': address,
         'lat': lat,
@@ -32,7 +35,8 @@ class UserModel {
 
   factory UserModel.fromMap(Map<String, dynamic> map, String id) => UserModel(
         id: id,
-        phone: map['phone'] as String,
+        phone: map['phone'] as String? ?? '',
+        email: map['email'] as String?,
         name: map['name'] as String?,
         address: map['address'] as String?,
         lat: (map['lat'] as num?)?.toDouble(),
@@ -42,6 +46,8 @@ class UserModel {
       );
 
   UserModel copyWith({
+    String? phone,
+    String? email,
     String? name,
     String? address,
     double? lat,
@@ -50,7 +56,8 @@ class UserModel {
   }) =>
       UserModel(
         id: id,
-        phone: phone,
+        phone: phone ?? this.phone,
+        email: email ?? this.email,
         name: name ?? this.name,
         address: address ?? this.address,
         lat: lat ?? this.lat,

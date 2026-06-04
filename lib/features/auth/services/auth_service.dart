@@ -1,11 +1,13 @@
 import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../../models/user_model.dart';
 
 class AuthService {
   FirebaseAuth get _auth => FirebaseAuth.instance;
+  GoogleSignIn get _googleSignIn => GoogleSignIn();
 
   String? _verificationId;
 
@@ -18,6 +20,7 @@ class AuthService {
       return UserModel(
         id: user.uid,
         phone: user.phoneNumber ?? '',
+        email: user.email,
         name: user.displayName,
       );
     } catch (_) {
@@ -63,7 +66,24 @@ class AuthService {
     return await _auth.signInWithCredential(credential);
   }
 
+  Future<UserCredential> signInWithGoogle() async {
+    final googleUser = await _googleSignIn.signIn();
+    if (googleUser == null) {
+      throw Exception('user-cancelled');
+    }
+
+    final googleAuth = await googleUser.authentication;
+    final credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
+    return await _auth.signInWithCredential(credential);
+  }
+
   Future<void> signOut() async {
-    await _auth.signOut();
+    await Future.wait([
+      _auth.signOut(),
+      _googleSignIn.signOut(),
+    ]);
   }
 }
