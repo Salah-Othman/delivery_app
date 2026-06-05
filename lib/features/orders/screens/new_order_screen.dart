@@ -7,6 +7,7 @@ import '../../auth/cubit/auth_cubit.dart';
 import '../../auth/cubit/auth_state.dart';
 import '../cubit/order_cubit.dart';
 import '../cubit/order_state.dart';
+import 'map_picker_screen.dart';
 
 class NewOrderScreen extends StatefulWidget {
   final OrderCubit? orderCubit;
@@ -26,6 +27,8 @@ class _NewOrderScreenState extends State<NewOrderScreen> {
 
   String _selectedService = 'سباكة';
   PaymentMethod _paymentMethod = PaymentMethod.cash;
+  double? _selectedLat;
+  double? _selectedLng;
 
   @override
   void didChangeDependencies() {
@@ -102,17 +105,29 @@ class _NewOrderScreenState extends State<NewOrderScreen> {
                   ),
                   const SizedBox(height: 20),
                   _SectionLabel(text: 'العنوان'),
-                  TextFormField(
-                    controller: _addressController,
-                    textDirection: TextDirection.rtl,
-                    validator: (v) =>
-                        (v == null || v.trim().isEmpty) ? 'اكتب العنوان' : null,
-                    decoration: const InputDecoration(
-                      hintText: 'شارع البحر، أبو قرقاص',
-                      hintTextDirection: TextDirection.rtl,
-                      prefixIcon: Icon(Icons.location_on_outlined),
+                  OutlinedButton.icon(
+                    onPressed: loading ? null : _pickLocation,
+                    icon: Icon(
+                      _selectedLat != null
+                          ? Icons.location_on_rounded
+                          : Icons.map_outlined,
+                    ),
+                    label: Text(
+                      _addressController.text.isNotEmpty
+                          ? _addressController.text
+                          : 'اختر الموقع على الخريطة',
                     ),
                   ),
+                  if (_addressController.text.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(
+                        '${_selectedLat!.toStringAsFixed(4)}, ${_selectedLng!.toStringAsFixed(4)}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
+                      ),
+                    ),
                   const SizedBox(height: 20),
                   _SectionLabel(text: 'طريقة الدفع'),
                   SegmentedButton<PaymentMethod>(
@@ -175,6 +190,25 @@ class _NewOrderScreenState extends State<NewOrderScreen> {
     );
   }
 
+  Future<void> _pickLocation() async {
+    final result = await Navigator.push<MapPickerResult>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MapPickerScreen(
+          initialLat: _selectedLat,
+          initialLng: _selectedLng,
+        ),
+      ),
+    );
+    if (result != null && mounted) {
+      setState(() {
+        _selectedLat = result.latitude;
+        _selectedLng = result.longitude;
+        _addressController.text = result.address;
+      });
+    }
+  }
+
   void _submitOrder(BuildContext context) {
     if (!_formKey.currentState!.validate()) return;
 
@@ -192,6 +226,8 @@ class _NewOrderScreenState extends State<NewOrderScreen> {
       price: double.parse(_priceController.text.trim()),
       paymentMethod: _paymentMethod,
       userAddress: _addressController.text.trim(),
+      userLat: _selectedLat,
+      userLng: _selectedLng,
     );
 
     context.read<OrderCubit>().createOrder(order);

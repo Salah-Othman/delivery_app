@@ -1,5 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+
+import '../../../core/routes.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._();
@@ -8,8 +11,13 @@ class NotificationService {
 
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   String? _token;
+  GlobalKey<NavigatorState>? _navigatorKey;
 
   String? get token => _token;
+
+  void setNavigatorKey(GlobalKey<NavigatorState> key) {
+    _navigatorKey = key;
+  }
 
   Future<void> initialize() async {
     final settings = await _messaging.requestPermission(
@@ -36,11 +44,47 @@ class NotificationService {
     final notification = message.notification;
     if (notification == null) return;
 
-    debugPrint('Foreground notification: ${notification.title}');
+    final navigatorContext = _navigatorKey?.currentContext;
+    if (navigatorContext == null) return;
+
+    ScaffoldMessenger.of(navigatorContext).showSnackBar(
+      SnackBar(
+        content: Text(notification.body ?? notification.title ?? ''),
+        action: SnackBarAction(
+          label: 'عرض',
+          onPressed: () => _navigateToOrder(message),
+        ),
+        duration: const Duration(seconds: 4),
+      ),
+    );
   }
 
   void _handleNotificationTap(RemoteMessage message) {
-    debugPrint('Notification tapped: ${message.messageId}');
+    _navigateToOrder(message);
+  }
+
+  void _navigateToOrder(RemoteMessage message) {
+    final data = message.data;
+    final orderId = data['orderId'] as String?;
+    if (orderId != null && orderId.isNotEmpty) {
+      _navigatorKey?.currentState?.pushNamed(
+        AppRoutes.orderTracking,
+        arguments: orderId,
+      );
+    }
+  }
+
+  Future<void> saveTokenToFirestore(String userId) async {
+    if (_token == null) return;
+    await FirebaseFirestore.instance.collection('users').doc(userId).update({
+      'fcmToken': _token,
+    });
+  }
+
+  Future<void> deleteTokenFromFirestore(String userId) async {
+    await FirebaseFirestore.instance.collection('users').doc(userId).update({
+      'fcmToken': FieldValue.delete(),
+    });
   }
 
   Future<void> deleteToken() async {

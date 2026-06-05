@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../models/order_model.dart';
 import '../../../shared/widgets/error_widget.dart';
@@ -40,7 +43,7 @@ class OrderTrackingScreen extends StatelessWidget {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              _OrderInfoCard(order: order),
+              _OrderMapCard(order: order),
               const SizedBox(height: 16),
               _StatusCard(order: order),
               const SizedBox(height: 16),
@@ -72,9 +75,7 @@ class OrderTrackingScreen extends StatelessWidget {
                   width: double.infinity,
                   height: 48,
                   child: OutlinedButton.icon(
-                    onPressed: () {
-                      // TODO: Open phone dialer
-                    },
+                    onPressed: () => _callProvider(context, order),
                     icon: const Icon(Icons.phone_rounded),
                     label: const Text('اتصل بمقدم الخدمة'),
                   ),
@@ -85,15 +86,26 @@ class OrderTrackingScreen extends StatelessWidget {
       ),
     );
   }
+
+  Future<void> _callProvider(BuildContext context, OrderModel order) async {
+    // TODO: Fetch provider phone from Firestore and pass it here
+    // For now, prompt user to call the provider directly
+    final uri = Uri.parse('tel:');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    }
+  }
 }
 
-class _OrderInfoCard extends StatelessWidget {
+class _OrderMapCard extends StatelessWidget {
   final OrderModel order;
-  const _OrderInfoCard({required this.order});
+  const _OrderMapCard({required this.order});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final hasCoords = order.userLat != null && order.userLng != null;
+
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -103,30 +115,76 @@ class _OrderInfoCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              height: 160,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.map_outlined,
-                        size: 48,
-                        color: theme.colorScheme.onSurfaceVariant),
-                    const SizedBox(height: 8),
-                    Text(
-                      order.userAddress ?? 'العنوان: غير محدد',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
+            Row(
+              children: [
+                Icon(Icons.location_on_rounded,
+                    size: 20, color: theme.colorScheme.primary),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    order.userAddress ?? 'العنوان: غير محدد',
+                    style: theme.textTheme.bodyMedium,
+                  ),
                 ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: SizedBox(
+                height: 180,
+                child: hasCoords
+                    ? FlutterMap(
+                        options: MapOptions(
+                          initialCenter:
+                              LatLng(order.userLat!, order.userLng!),
+                          initialZoom: 15,
+                          interactionOptions: const InteractionOptions(
+                            flags: InteractiveFlag.all,
+                          ),
+                        ),
+                        children: [
+                          TileLayer(
+                            urlTemplate:
+                                'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                            userAgentPackageName: 'app_delivery',
+                          ),
+                          MarkerLayer(
+                            markers: [
+                              Marker(
+                                point:
+                                    LatLng(order.userLat!, order.userLng!),
+                                width: 40,
+                                height: 40,
+                                child: Icon(
+                                  Icons.location_on_rounded,
+                                  size: 40,
+                                  color: theme.colorScheme.primary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      )
+                    : Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.map_outlined,
+                                size: 48,
+                                color: theme.colorScheme.onSurfaceVariant),
+                            const SizedBox(height: 8),
+                            Text(
+                              'الموقع غير محدد',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
               ),
             ),
           ],
