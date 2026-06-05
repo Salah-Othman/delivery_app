@@ -1,0 +1,39 @@
+type User @table {
+  name: String!
+  email: String!
+  role: String!
+  phoneNumber: String
+  certifications: String
+}
+
+type MaintenanceRequest @table {
+  status: String!
+  description: String!
+  priority: String!
+  scheduledDate: Timestamp
+  technician: User
+  customer: User
+}
+
+type Part @table {
+  name: String!
+  sku: String!
+  stockLevel: Int!
+  manufacturer: String
+  description: String
+}
+
+type Delivery @table {
+  trackingNumber: String!
+  status: String!
+  expectedDeliveryDate: Timestamp
+  maintenanceRequest: MaintenanceRequest
+}
+
+type ServiceLog @table {
+  timestamp: Timestamp!
+  technician: User!
+  maintenanceRequest: MaintenanceRequest!
+  notes: String
+  partsUsedCount: Int
+}

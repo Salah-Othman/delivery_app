@@ -1,62 +1,77 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/routes.dart';
+import '../../../models/order_model.dart';
+import '../../../shared/widgets/empty_state_widget.dart';
+import '../../../shared/widgets/error_widget.dart';
+import '../../../shared/widgets/loading_widget.dart';
+import '../../auth/cubit/auth_cubit.dart';
+import '../../auth/cubit/auth_state.dart';
+import '../services/order_service.dart';
 
 class OrderHistoryScreen extends StatelessWidget {
   const OrderHistoryScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final authState = context.watch<AuthCubit>().state;
+    if (authState is! AuthVerified) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('طلباتي')),
+        body: const EmptyStateWidget(
+          icon: Icons.login_rounded,
+          title: 'سجل الدخول لعرض طلباتك',
+        ),
+      );
+    }
 
+    final orderService = OrderService();
     return Scaffold(
       appBar: AppBar(title: const Text('طلباتي')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _buildOrderCard(
-            theme,
-            'سباكة',
-            'إصلاح حنفية المطبخ',
-            '200 EGP',
-            'تم الانتهاء',
-            true,
-            () => Navigator.pushNamed(context, AppRoutes.orderTracking),
-          ),
-          const SizedBox(height: 12),
-          _buildOrderCard(
-            theme,
-            'تكييف',
-            'صيانة دورية',
-            '350 EGP',
-            'قيد التنفيذ',
-            false,
-            () => Navigator.pushNamed(context, AppRoutes.orderTracking),
-          ),
-          const SizedBox(height: 12),
-          _buildOrderCard(
-            theme,
-            'توصيل',
-            'طلب من بقالة',
-            '50 EGP',
-            'تم الانتهاء',
-            true,
-            () => Navigator.pushNamed(context, AppRoutes.orderTracking),
-          ),
-        ],
+      body: StreamBuilder<List<OrderModel>>(
+        stream: orderService.userOrdersStream(authState.user.id),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const LoadingWidget();
+          }
+          if (snapshot.hasError) {
+            return const AppErrorWidget(
+              message: 'حدث خطأ أثناء تحميل الطلبات',
+            );
+          }
+          final orders = snapshot.data ?? [];
+          if (orders.isEmpty) {
+            return const EmptyStateWidget(
+              icon: Icons.receipt_long_outlined,
+              title: 'لا توجد طلبات سابقة',
+              subtitle: 'اطلب خدمة جديدة من الصفحة الرئيسية',
+            );
+          }
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: orders.length,
+            itemBuilder: (context, i) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _OrderCard(order: orders[i]),
+            ),
+          );
+        },
       ),
     );
   }
+}
 
-  Widget _buildOrderCard(
-    ThemeData theme,
-    String service,
-    String description,
-    String price,
-    String status,
-    bool completed,
-    VoidCallback onTap,
-  ) {
+class _OrderCard extends StatelessWidget {
+  final OrderModel order;
+  const _OrderCard({required this.order});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isCompleted = order.status == OrderStatus.completed;
+    final isCancelled = order.status == OrderStatus.cancelled;
+
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -76,32 +91,42 @@ class OrderHistoryScreen extends StatelessWidget {
             color: theme.colorScheme.primary,
           ),
         ),
-        title: Text(service, style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(order.serviceType,
+            style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(description),
+            Text(
+              order.description,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
             const SizedBox(height: 4),
             Row(
               children: [
-                Text(price, style: const TextStyle(fontWeight: FontWeight.w600)),
+                Text('${order.price} EGP',
+                    style: const TextStyle(fontWeight: FontWeight.w600)),
                 const Spacer(),
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: completed
-                        ? theme.colorScheme.tertiaryContainer
-                        : theme.colorScheme.secondaryContainer,
+                    color: isCancelled
+                        ? theme.colorScheme.errorContainer
+                        : isCompleted
+                            ? theme.colorScheme.tertiaryContainer
+                            : theme.colorScheme.secondaryContainer,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    status,
+                    order.status.label,
                     style: TextStyle(
                       fontSize: 12,
-                      color: completed
-                          ? theme.colorScheme.onTertiaryContainer
-                          : theme.colorScheme.onSecondaryContainer,
+                      color: isCancelled
+                          ? theme.colorScheme.onErrorContainer
+                          : isCompleted
+                              ? theme.colorScheme.onTertiaryContainer
+                              : theme.colorScheme.onSecondaryContainer,
                     ),
                   ),
                 ),
@@ -110,7 +135,11 @@ class OrderHistoryScreen extends StatelessWidget {
           ],
         ),
         trailing: const Icon(Icons.chevron_left),
-        onTap: onTap,
+        onTap: () => Navigator.pushNamed(
+          context,
+          AppRoutes.orderTracking,
+          arguments: order.id,
+        ),
       ),
     );
   }

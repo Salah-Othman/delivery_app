@@ -10,6 +10,7 @@ import 'features/auth/cubit/auth_state.dart';
 import 'features/auth/screens/login_screen.dart';
 import 'features/auth/screens/otp_screen.dart';
 import 'features/home/screens/home_screen.dart';
+import 'features/notifications/services/notification_service.dart';
 import 'features/orders/screens/new_order_screen.dart';
 import 'features/orders/screens/order_tracking_screen.dart';
 import 'features/orders/screens/order_history_screen.dart';
@@ -18,6 +19,7 @@ import 'features/profile/screens/profile_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await FirebaseService.initialize();
+  NotificationService().initialize();
   runApp(const EidWahdaApp());
 }
 

@@ -1,108 +1,247 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/routes.dart';
+import '../../../models/order_model.dart';
+import '../../auth/cubit/auth_cubit.dart';
+import '../../auth/cubit/auth_state.dart';
+import '../cubit/order_cubit.dart';
+import '../cubit/order_state.dart';
 
-class NewOrderScreen extends StatelessWidget {
-  const NewOrderScreen({super.key});
+class NewOrderScreen extends StatefulWidget {
+  final OrderCubit? orderCubit;
+
+  const NewOrderScreen({super.key, this.orderCubit});
+
+  @override
+  State<NewOrderScreen> createState() => _NewOrderScreenState();
+}
+
+class _NewOrderScreenState extends State<NewOrderScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _descriptionController = TextEditingController();
+  final _addressController = TextEditingController();
+  final _priceController = TextEditingController();
+
+  String _selectedService = 'سباكة';
+  PaymentMethod _paymentMethod = PaymentMethod.cash;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is String && args.isNotEmpty) {
+      _selectedService = args;
+    }
+  }
+
+  @override
+  void dispose() {
+    _descriptionController.dispose();
+    _addressController.dispose();
+    _priceController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('طلب خدمة جديدة')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Text(
-            'اختر الخدمة',
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
-          const SizedBox(height: 8),
-          DropdownButtonFormField<String>(
-            items: const [
-              DropdownMenuItem(value: 'سباكة', child: Text('سباكة')),
-              DropdownMenuItem(value: 'كهرباء', child: Text('كهرباء')),
-              DropdownMenuItem(value: 'تكييف', child: Text('تكييف')),
-              DropdownMenuItem(value: 'نجارة', child: Text('نجارة')),
-              DropdownMenuItem(value: 'دهان', child: Text('دهان')),
-              DropdownMenuItem(value: 'توصيل', child: Text('توصيل')),
-            ],
-            onChanged: (_) {},
-            decoration: InputDecoration(
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'وصف المشكلة',
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            maxLines: 4,
-            textDirection: TextDirection.rtl,
-            decoration: InputDecoration(
-              hintText: 'اكتب وصف للمشكلة بالتفصيل...',
-              hintTextDirection: TextDirection.rtl,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+    return BlocProvider(
+      create: (_) => widget.orderCubit ?? OrderCubit(),
+      child: BlocConsumer<OrderCubit, OrderState>(
+        listener: (context, state) {
+          if (state is OrderCreated) {
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              AppRoutes.orderTracking,
+              (route) => route.settings.name == AppRoutes.home,
+              arguments: state.orderId,
+            );
+          } else if (state is OrderError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.message)),
+            );
+          }
+        },
+        builder: (context, state) {
+          final loading = state is OrderLoading;
+          return Scaffold(
+            appBar: AppBar(title: const Text('طلب خدمة جديدة')),
+            body: Form(
+              key: _formKey,
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  Text(
+                    'اختر الخدمة',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<String>(
+                    initialValue: _selectedService,
+                    items: const [
+                      DropdownMenuItem(value: 'سباكة', child: Text('سباكة')),
+                      DropdownMenuItem(value: 'كهرباء', child: Text('كهرباء')),
+                      DropdownMenuItem(value: 'تكييف', child: Text('تكييف')),
+                      DropdownMenuItem(value: 'نجارة', child: Text('نجارة')),
+                      DropdownMenuItem(value: 'دهان', child: Text('دهان')),
+                      DropdownMenuItem(value: 'توصيل', child: Text('توصيل')),
+                    ],
+                    onChanged: loading
+                        ? null
+                        : (v) => setState(() => _selectedService = v!),
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'وصف المشكلة',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _descriptionController,
+                    maxLines: 4,
+                    textDirection: TextDirection.rtl,
+                    validator: (v) =>
+                        (v == null || v.trim().isEmpty) ? 'اكتب وصف المشكلة' : null,
+                    decoration: InputDecoration(
+                      hintText: 'اكتب وصف للمشكلة بالتفصيل...',
+                      hintTextDirection: TextDirection.rtl,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'العنوان',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _addressController,
+                    textDirection: TextDirection.rtl,
+                    validator: (v) =>
+                        (v == null || v.trim().isEmpty) ? 'اكتب العنوان' : null,
+                    decoration: InputDecoration(
+                      hintText: 'شارع البحر، أبو قرقاص',
+                      hintTextDirection: TextDirection.rtl,
+                      prefixIcon: const Icon(Icons.location_on_outlined),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'طريقة الدفع',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  SegmentedButton<PaymentMethod>(
+                    segments: const [
+                      ButtonSegment(
+                        value: PaymentMethod.cash,
+                        label: Text('كاش'),
+                        icon: Icon(Icons.money_rounded),
+                      ),
+                      ButtonSegment(
+                        value: PaymentMethod.vodafoneCash,
+                        label: Text('فودافون كاش'),
+                        icon: Icon(Icons.phone_android_rounded),
+                      ),
+                    ],
+                    selected: {_paymentMethod},
+                    onSelectionChanged: loading
+                        ? null
+                        : (v) => setState(() => _paymentMethod = v.first),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'السعر المقترح',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _priceController,
+                    textDirection: TextDirection.ltr,
+                    textAlign: TextAlign.center,
+                    keyboardType: TextInputType.number,
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) return 'اكتب السعر';
+                      if (double.tryParse(v) == null || double.parse(v) <= 0) {
+                        return 'سعر غير صحيح';
+                      }
+                      return null;
+                    },
+                    decoration: InputDecoration(
+                      hintText: 'مثلاً: 200',
+                      prefixIcon: const Icon(Icons.attach_money),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: FilledButton(
+                      onPressed: loading ? null : () => _submitOrder(context),
+                      child: loading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text('إرسال الطلب'),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'العنوان',
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            textDirection: TextDirection.rtl,
-            decoration: InputDecoration(
-              hintText: 'شارع البحر، أبو قرقاص',
-              hintTextDirection: TextDirection.rtl,
-              prefixIcon: const Icon(Icons.location_on_outlined),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'السعر المقترح',
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            textDirection: TextDirection.ltr,
-            textAlign: TextAlign.center,
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(
-              hintText: 'مثلاً: 200',
-              prefixIcon: const Icon(Icons.attach_money),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
-          const SizedBox(height: 32),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: FilledButton(
-              onPressed: () =>
-                  Navigator.pushNamed(context, AppRoutes.orderTracking),
-              child: const Text('إرسال الطلب'),
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
+  }
+
+  void _submitOrder(BuildContext context) {
+    if (!_formKey.currentState!.validate()) return;
+
+    final authState = context.read<AuthCubit>().state;
+    if (authState is! AuthVerified) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يجب تسجيل الدخول أولاً')),
+      );
+      return;
+    }
+
+    final order = OrderModel(
+      id: '',
+      userId: authState.user.id,
+      serviceType: _selectedService,
+      description: _descriptionController.text.trim(),
+      price: double.parse(_priceController.text.trim()),
+      paymentMethod: _paymentMethod,
+      userAddress: _addressController.text.trim(),
+    );
+
+    context.read<OrderCubit>().createOrder(order);
   }
 }

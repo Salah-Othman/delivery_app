@@ -1,0 +1,27 @@
+mutation CreateUser {
+  user_insert(data: {
+    name: "John Doe",
+    email: "john@example.com",
+    role: "Technician"
+  })
+}
+
+query ListMaintenanceRequests @auth(level: USER) {
+  maintenanceRequests {
+    id
+    status
+    description
+    priority
+  }
+}
+
+mutation UpdatePartStock($id: UUID!, $newStock: Int!) @auth(level: USER) {
+  part_update(
+    key: {id: $id},
+    data: {stockLevel: $newStock}
+  )
+}
+
+mutation DeleteServiceLog($id: UUID!) @auth(level: USER) {
+  serviceLog_delete(key: {id: $id})
+}

@@ -5,7 +5,10 @@ import '../../../models/review_model.dart';
 import '../../../core/constants.dart';
 
 class OrderService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseFirestore _firestore;
+
+  OrderService({FirebaseFirestore? firestore})
+      : _firestore = firestore ?? FirebaseFirestore.instance;
 
   CollectionReference<Map<String, dynamic>> get _orders =>
       _firestore.collection(AppConstants.firebaseCollectionOrders);

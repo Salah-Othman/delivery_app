@@ -22,7 +22,7 @@ class DefaultFirebaseOptions {
     return const FirebaseOptions(
       apiKey: 'AIzaSyCX108aXZhD4kb1lL4cuEneuCdhU0vIV5M',
       appId: '1:392878462274:android:b145f73ccd537cc30424db',
-      messagingSenderId: 'YOUR_SENDER_ID',
+      messagingSenderId: '392878462274',
       projectId: 'eid-wahda',
       storageBucket: 'eid-wahda.firebasestorage.app',
     );
