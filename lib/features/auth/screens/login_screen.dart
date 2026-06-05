@@ -14,6 +14,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _phoneController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
 
   @override
   void dispose() {
@@ -23,156 +24,146 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return BlocListener<AuthCubit, AuthState>(
       listener: (context, state) {
         if (state is AuthCodeSent) {
-          Navigator.pushNamed(
-            context,
-            AppRoutes.otp,
-            arguments: state.phone,
-          );
+          Navigator.pushNamed(context, AppRoutes.otp, arguments: state.phone);
         } else if (state is AuthError) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message)),
-          );
+          _showSnackBar(context, state.message);
         }
       },
       child: Scaffold(
         body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
+          child: Form(
+            key: _formKey,
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
               children: [
-                const Spacer(flex: 2),
-                Icon(
-                  Icons.handshake_rounded,
-                  size: 80,
-                  color: Theme.of(context).colorScheme.primary,
+                const SizedBox(height: 80),
+                Container(
+                  width: 88,
+                  height: 88,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Icon(
+                    Icons.handshake_rounded,
+                    size: 48,
+                    color: theme.colorScheme.primary,
+                  ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
                 Text(
                   'إيد واحدة',
-                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
+                  style: theme.textTheme.headlineLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.primary,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'كل حاجة في مكان واحد',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                const Spacer(flex: 1),
-                TextField(
+                const SizedBox(height: 48),
+                TextFormField(
                   controller: _phoneController,
                   textDirection: TextDirection.ltr,
                   textAlign: TextAlign.center,
                   keyboardType: TextInputType.phone,
+                  maxLength: 11,
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return 'برجاء إدخال رقم الموبايل';
+                    if (v.trim().length < 11) return 'رقم غير صحيح (يجب أن يكون 11 رقم)';
+                    return null;
+                  },
                   decoration: InputDecoration(
-                    hintText: 'رقم الموبايل',
-                    hintTextDirection: TextDirection.rtl,
+                    hintText: '01001234567',
+                    counterText: '',
                     prefixIcon: const Icon(Icons.phone_android_rounded),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'مثال: 01001234567',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
                 BlocBuilder<AuthCubit, AuthState>(
                   builder: (context, state) {
                     final loading = state is AuthLoading;
-                    return SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: FilledButton(
-                        onPressed: loading
-                            ? null
-                            : () {
-                                final phone = _phoneController.text.trim();
-                                if (phone.isEmpty) return;
-                                context
-                                    .read<AuthCubit>()
-                                    .signInWithPhone('+2$phone');
-                              },
-                        child: loading
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Text('تسجيل الدخول برقم الموبايل'),
-                      ),
+                    return FilledButton(
+                      onPressed: loading
+                          ? null
+                          : () {
+                              if (!_formKey.currentState!.validate()) return;
+                              final phone = _phoneController.text.trim();
+                              context.read<AuthCubit>().signInWithPhone('+2$phone');
+                            },
+                      child: loading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text('تسجيل الدخول برقم الموبايل'),
                     );
                   },
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 32),
                 Row(
                   children: [
-                    Expanded(
-                      child: Divider(
-                        color: Theme.of(context).colorScheme.outlineVariant,
-                      ),
-                    ),
+                    Expanded(child: Divider(color: theme.colorScheme.outlineVariant)),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Text(
                         'أو',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color:
-                                  Theme.of(context).colorScheme.onSurfaceVariant,
-                            ),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ),
-                    Expanded(
-                      child: Divider(
-                        color: Theme.of(context).colorScheme.outlineVariant,
-                      ),
-                    ),
+                    Expanded(child: Divider(color: theme.colorScheme.outlineVariant)),
                   ],
                 ),
                 const SizedBox(height: 24),
                 BlocBuilder<AuthCubit, AuthState>(
                   builder: (context, state) {
                     final loading = state is AuthLoading;
-                    return SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: OutlinedButton.icon(
-                        onPressed: loading
-                            ? null
-                            : () => context
-                                .read<AuthCubit>()
-                                .signInWithGoogle(),
-                        icon: Image.asset(
-                          'assets/google_logo.png',
-                          height: 20,
-                          errorBuilder: (_, _, _) => const Icon(
-                            Icons.g_mobiledata_rounded,
-                            size: 28,
-                          ),
+                    return OutlinedButton.icon(
+                      onPressed: loading
+                          ? null
+                          : () => context.read<AuthCubit>().signInWithGoogle(),
+                      icon: Image.asset(
+                        'assets/google_logo.png',
+                        height: 20,
+                        errorBuilder: (_, _, _) => const Icon(
+                          Icons.g_mobiledata_rounded,
+                          size: 28,
                         ),
-                        label: const Text('تسجيل الدخول بواسطة Google'),
                       ),
+                      label: const Text('تسجيل الدخول بواسطة Google'),
                     );
                   },
                 ),
-                const Spacer(flex: 2),
+                const SizedBox(height: 40),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  void _showSnackBar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Theme.of(context).colorScheme.error,
       ),
     );
   }

@@ -19,6 +19,7 @@ class NewOrderScreen extends StatefulWidget {
 
 class _NewOrderScreenState extends State<NewOrderScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _scrollController = ScrollController();
   final _descriptionController = TextEditingController();
   final _addressController = TextEditingController();
   final _priceController = TextEditingController();
@@ -40,6 +41,7 @@ class _NewOrderScreenState extends State<NewOrderScreen> {
     _descriptionController.dispose();
     _addressController.dispose();
     _priceController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -57,9 +59,7 @@ class _NewOrderScreenState extends State<NewOrderScreen> {
               arguments: state.orderId,
             );
           } else if (state is OrderError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message)),
-            );
+            _showSnackBar(context, state.message);
           }
         },
         builder: (context, state) {
@@ -69,15 +69,10 @@ class _NewOrderScreenState extends State<NewOrderScreen> {
             body: Form(
               key: _formKey,
               child: ListView(
+                controller: _scrollController,
                 padding: const EdgeInsets.all(16),
                 children: [
-                  Text(
-                    'اختر الخدمة',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                  const SizedBox(height: 8),
+                  _SectionLabel(text: 'اختر الخدمة'),
                   DropdownButtonFormField<String>(
                     initialValue: _selectedService,
                     items: const [
@@ -91,63 +86,35 @@ class _NewOrderScreenState extends State<NewOrderScreen> {
                     onChanged: loading
                         ? null
                         : (v) => setState(() => _selectedService = v!),
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                    ),
                   ),
                   const SizedBox(height: 20),
-                  Text(
-                    'وصف المشكلة',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                  const SizedBox(height: 8),
+                  _SectionLabel(text: 'وصف المشكلة'),
                   TextFormField(
                     controller: _descriptionController,
                     maxLines: 4,
                     textDirection: TextDirection.rtl,
                     validator: (v) =>
                         (v == null || v.trim().isEmpty) ? 'اكتب وصف المشكلة' : null,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       hintText: 'اكتب وصف للمشكلة بالتفصيل...',
                       hintTextDirection: TextDirection.rtl,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
                     ),
                   ),
                   const SizedBox(height: 20),
-                  Text(
-                    'العنوان',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                  const SizedBox(height: 8),
+                  _SectionLabel(text: 'العنوان'),
                   TextFormField(
                     controller: _addressController,
                     textDirection: TextDirection.rtl,
                     validator: (v) =>
                         (v == null || v.trim().isEmpty) ? 'اكتب العنوان' : null,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       hintText: 'شارع البحر، أبو قرقاص',
                       hintTextDirection: TextDirection.rtl,
-                      prefixIcon: const Icon(Icons.location_on_outlined),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                      prefixIcon: Icon(Icons.location_on_outlined),
                     ),
                   ),
                   const SizedBox(height: 20),
-                  Text(
-                    'طريقة الدفع',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                  const SizedBox(height: 8),
+                  _SectionLabel(text: 'طريقة الدفع'),
                   SegmentedButton<PaymentMethod>(
                     segments: const [
                       ButtonSegment(
@@ -167,13 +134,7 @@ class _NewOrderScreenState extends State<NewOrderScreen> {
                         : (v) => setState(() => _paymentMethod = v.first),
                   ),
                   const SizedBox(height: 20),
-                  Text(
-                    'السعر المقترح',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                  const SizedBox(height: 8),
+                  _SectionLabel(text: 'السعر المقترح'),
                   TextFormField(
                     controller: _priceController,
                     textDirection: TextDirection.ltr,
@@ -186,31 +147,24 @@ class _NewOrderScreenState extends State<NewOrderScreen> {
                       }
                       return null;
                     },
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       hintText: 'مثلاً: 200',
-                      prefixIcon: const Icon(Icons.attach_money),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                      prefixIcon: Icon(Icons.attach_money),
                     ),
                   ),
                   const SizedBox(height: 32),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: FilledButton(
-                      onPressed: loading ? null : () => _submitOrder(context),
-                      child: loading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Text('إرسال الطلب'),
-                    ),
+                  FilledButton(
+                    onPressed: loading ? null : () => _submitOrder(context),
+                    child: loading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text('إرسال الطلب'),
                   ),
                 ],
               ),
@@ -226,9 +180,7 @@ class _NewOrderScreenState extends State<NewOrderScreen> {
 
     final authState = context.read<AuthCubit>().state;
     if (authState is! AuthVerified) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يجب تسجيل الدخول أولاً')),
-      );
+      _showSnackBar(context, 'يجب تسجيل الدخول أولاً');
       return;
     }
 
@@ -243,5 +195,29 @@ class _NewOrderScreenState extends State<NewOrderScreen> {
     );
 
     context.read<OrderCubit>().createOrder(order);
+  }
+
+  void _showSnackBar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  final String text;
+  const _SectionLabel({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Text(
+        text,
+        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+      ),
+    );
   }
 }

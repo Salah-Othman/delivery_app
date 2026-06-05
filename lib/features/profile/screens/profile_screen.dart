@@ -13,6 +13,7 @@ class ProfileScreen extends StatelessWidget {
     final theme = Theme.of(context);
     final authState = context.watch<AuthCubit>().state;
     final user = authState is AuthVerified ? authState.user : null;
+    final phone = user?.phone;
 
     return Scaffold(
       appBar: AppBar(title: const Text('حسابي')),
@@ -34,62 +35,84 @@ class ProfileScreen extends StatelessWidget {
                 const SizedBox(height: 12),
                 Text(
                   user?.name ?? 'مستخدم',
-                  style: const TextStyle(
-                      fontSize: 20, fontWeight: FontWeight.bold),
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-                Text(
-                  user?.phone ?? '',
-                  style:
-                      TextStyle(color: theme.colorScheme.onSurfaceVariant),
-                ),
+                if (phone != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      phone,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
           const SizedBox(height: 32),
-          _buildMenuItem(theme, Icons.receipt_long_outlined, 'طلباتي', () {
-            Navigator.pushNamed(context, AppRoutes.orderHistory);
-          }),
-          _buildMenuItem(
-              theme, Icons.location_on_outlined, 'العناوين', () {}),
-          _buildMenuItem(
-              theme, Icons.payment_outlined, 'طرق الدفع', () {}),
-          _buildMenuItem(
-              theme, Icons.favorite_outline, 'المفضلة', () {}),
-          _buildMenuItem(
-              theme, Icons.headset_mic_outlined, 'خدمة العملاء', () {}),
-          _buildMenuItem(
-              theme, Icons.settings_outlined, 'الإعدادات', () {}),
+          _ProfileMenuItem(
+            icon: Icons.receipt_long_outlined,
+            label: 'طلباتي',
+            onTap: () => Navigator.pushNamed(context, AppRoutes.orderHistory),
+          ),
+          _ProfileMenuItem(
+            icon: Icons.location_on_outlined,
+            label: 'العناوين',
+          ),
+          _ProfileMenuItem(
+            icon: Icons.payment_outlined,
+            label: 'طرق الدفع',
+          ),
+          _ProfileMenuItem(
+            icon: Icons.favorite_outline,
+            label: 'المفضلة',
+          ),
+          _ProfileMenuItem(
+            icon: Icons.headset_mic_outlined,
+            label: 'خدمة العملاء',
+          ),
+          _ProfileMenuItem(
+            icon: Icons.settings_outlined,
+            label: 'الإعدادات',
+          ),
           const SizedBox(height: 32),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: OutlinedButton.icon(
-              onPressed: () {
-                context.read<AuthCubit>().signOut();
-                Navigator.pushNamedAndRemoveUntil(
-                    context, AppRoutes.login, (_) => false);
-              },
-              icon: const Icon(Icons.logout_rounded),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: theme.colorScheme.error,
-                side: BorderSide(color: theme.colorScheme.error),
-              ),
-              label: const Text('تسجيل الخروج'),
+          OutlinedButton.icon(
+            onPressed: () {
+              context.read<AuthCubit>().signOut();
+              Navigator.pushNamedAndRemoveUntil(
+                  context, AppRoutes.login, (_) => false);
+            },
+            icon: const Icon(Icons.logout_rounded),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: theme.colorScheme.error,
+              side: BorderSide(color: theme.colorScheme.error),
             ),
+            label: const Text('تسجيل الخروج'),
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildMenuItem(
-      ThemeData theme, IconData icon, String label, VoidCallback onTap) {
+class _ProfileMenuItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
+
+  const _ProfileMenuItem({
+    required this.icon,
+    required this.label,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Card(
-      elevation: 0,
       margin: const EdgeInsets.only(bottom: 4),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
       child: ListTile(
         leading: Icon(icon),
         title: Text(label),

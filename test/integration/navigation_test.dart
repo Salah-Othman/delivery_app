@@ -6,7 +6,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:app_delivery/core/routes.dart';
 import 'package:app_delivery/core/theme.dart';
 import 'package:app_delivery/features/auth/cubit/auth_cubit.dart';
-import 'package:app_delivery/features/orders/cubit/order_cubit.dart';
 import 'package:app_delivery/features/home/screens/home_screen.dart';
 
 Widget createIntegrationApp() {

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/routes.dart';
@@ -10,8 +10,15 @@ import '../../auth/cubit/auth_cubit.dart';
 import '../../auth/cubit/auth_state.dart';
 import '../services/order_service.dart';
 
-class OrderHistoryScreen extends StatelessWidget {
+class OrderHistoryScreen extends StatefulWidget {
   const OrderHistoryScreen({super.key});
+
+  @override
+  State<OrderHistoryScreen> createState() => _OrderHistoryScreenState();
+}
+
+class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
+  final OrderService _orderService = OrderService();
 
   @override
   Widget build(BuildContext context) {
@@ -26,18 +33,18 @@ class OrderHistoryScreen extends StatelessWidget {
       );
     }
 
-    final orderService = OrderService();
     return Scaffold(
       appBar: AppBar(title: const Text('طلباتي')),
       body: StreamBuilder<List<OrderModel>>(
-        stream: orderService.userOrdersStream(authState.user.id),
+        stream: _orderService.userOrdersStream(authState.user.id),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const LoadingWidget();
           }
           if (snapshot.hasError) {
-            return const AppErrorWidget(
+            return AppErrorWidget(
               message: 'حدث خطأ أثناء تحميل الطلبات',
+              onRetry: () => setState(() {}),
             );
           }
           final orders = snapshot.data ?? [];
@@ -48,12 +55,15 @@ class OrderHistoryScreen extends StatelessWidget {
               subtitle: 'اطلب خدمة جديدة من الصفحة الرئيسية',
             );
           }
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: orders.length,
-            itemBuilder: (context, i) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: _OrderCard(order: orders[i]),
+          return RefreshIndicator(
+            onRefresh: () async => setState(() {}),
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: orders.length,
+              itemBuilder: (context, i) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _OrderCard(order: orders[i]),
+              ),
             ),
           );
         },

@@ -6,7 +6,6 @@ import 'core/firebase_service.dart';
 import 'core/routes.dart';
 import 'core/theme.dart';
 import 'features/auth/cubit/auth_cubit.dart';
-import 'features/auth/cubit/auth_state.dart';
 import 'features/auth/screens/login_screen.dart';
 import 'features/auth/screens/otp_screen.dart';
 import 'features/home/screens/home_screen.dart';
@@ -15,6 +14,7 @@ import 'features/orders/screens/new_order_screen.dart';
 import 'features/orders/screens/order_tracking_screen.dart';
 import 'features/orders/screens/order_history_screen.dart';
 import 'features/profile/screens/profile_screen.dart';
+import 'features/splash/screens/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,8 +41,9 @@ class EidWahdaApp extends StatelessWidget {
           GlobalCupertinoLocalizations.delegate,
         ],
         theme: AppTheme.light,
-        home: const AuthGate(),
+        home: const SplashScreen(),
         routes: {
+          AppRoutes.login: (_) => const LoginScreen(),
           AppRoutes.otp: (_) => const OtpScreen(),
           AppRoutes.home: (_) => const HomeScreen(),
           AppRoutes.newOrder: (_) => const NewOrderScreen(),
@@ -55,18 +56,5 @@ class EidWahdaApp extends StatelessWidget {
   }
 }
 
-class AuthGate extends StatelessWidget {
-  const AuthGate({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<AuthCubit, AuthState>(
-      builder: (context, state) {
-        if (state is AuthVerified) {
-          return const HomeScreen();
-        }
-        return const LoginScreen();
-      },
-    );
-  }
-}
+ 
