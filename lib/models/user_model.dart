@@ -42,7 +42,11 @@ class UserModel {
         lat: (map['lat'] as num?)?.toDouble(),
         lng: (map['lng'] as num?)?.toDouble(),
         orderCount: (map['orderCount'] as num?)?.toInt() ?? 0,
-        createdAt: (map['createdAt'] as dynamic)?.toDate() ?? DateTime.now(),
+        createdAt: map['createdAt'] != null
+            ? (map['createdAt'] is DateTime
+                ? map['createdAt'] as DateTime
+                : (map['createdAt'] as dynamic).toDate())
+            : DateTime.now(),
       );
 
   UserModel copyWith({

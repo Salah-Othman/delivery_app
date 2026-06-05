@@ -7,10 +7,7 @@ import '../../../models/user_model.dart';
 
 class AuthService {
   FirebaseAuth get _auth => FirebaseAuth.instance;
-<<<<<<< HEAD
-  GoogleSignIn get _googleSignIn => GoogleSignIn();
-=======
->>>>>>> bbc6f8fa6ca2b08fd8d4f51b35938d2a6ba1a1ee
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
 
   String? _verificationId;
 
@@ -23,10 +20,7 @@ class AuthService {
       return UserModel(
         id: user.uid,
         phone: user.phoneNumber ?? '',
-<<<<<<< HEAD
         email: user.email,
-=======
->>>>>>> bbc6f8fa6ca2b08fd8d4f51b35938d2a6ba1a1ee
         name: user.displayName,
       );
     } catch (_) {
@@ -70,7 +64,6 @@ class AuthService {
       smsCode: smsCode,
     );
     return await _auth.signInWithCredential(credential);
-<<<<<<< HEAD
   }
 
   Future<UserCredential> signInWithGoogle() async {
@@ -92,11 +85,5 @@ class AuthService {
       _auth.signOut(),
       _googleSignIn.signOut(),
     ]);
-=======
-  }
-
-  Future<void> signOut() async {
-    await _auth.signOut();
->>>>>>> bbc6f8fa6ca2b08fd8d4f51b35938d2a6ba1a1ee
   }
 }

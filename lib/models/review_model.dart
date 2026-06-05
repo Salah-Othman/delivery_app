@@ -35,6 +35,10 @@ class ReviewModel {
         providerId: map['providerId'] as String,
         rating: (map['rating'] as num).toInt(),
         comment: map['comment'] as String?,
-        createdAt: (map['createdAt'] as dynamic)?.toDate() ?? DateTime.now(),
+        createdAt: map['createdAt'] != null
+            ? (map['createdAt'] is DateTime
+                ? map['createdAt'] as DateTime
+                : (map['createdAt'] as dynamic).toDate())
+            : DateTime.now(),
       );
 }

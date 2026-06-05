@@ -110,7 +110,15 @@ class OrderModel {
         userAddress: map['userAddress'] as String?,
         userLat: (map['userLat'] as num?)?.toDouble(),
         userLng: (map['userLng'] as num?)?.toDouble(),
-        createdAt: (map['createdAt'] as dynamic)?.toDate() ?? DateTime.now(),
-        completedAt: (map['completedAt'] as dynamic)?.toDate(),
+        createdAt: map['createdAt'] != null
+            ? (map['createdAt'] is DateTime
+                ? map['createdAt'] as DateTime
+                : (map['createdAt'] as dynamic).toDate())
+            : DateTime.now(),
+        completedAt: map['completedAt'] != null
+            ? (map['completedAt'] is DateTime
+                ? map['completedAt'] as DateTime
+                : (map['completedAt'] as dynamic).toDate())
+            : null,
       );
 }

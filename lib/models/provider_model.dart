@@ -42,8 +42,8 @@ class ProviderModel {
   factory ProviderModel.fromMap(Map<String, dynamic> map, String id) =>
       ProviderModel(
         id: id,
-        phone: map['phone'] as String,
-        name: map['name'] as String,
+        phone: map['phone'] as String? ?? '',
+        name: map['name'] as String? ?? '',
         services: List<String>.from(map['services'] ?? []),
         available: map['available'] as bool? ?? true,
         lat: (map['lat'] as num?)?.toDouble(),
@@ -51,7 +51,11 @@ class ProviderModel {
         rating: (map['rating'] as num?)?.toDouble() ?? 0,
         totalOrders: (map['totalOrders'] as num?)?.toInt() ?? 0,
         commission: (map['commission'] as num?)?.toDouble() ?? 0.10,
-        createdAt: (map['createdAt'] as dynamic)?.toDate() ?? DateTime.now(),
+        createdAt: map['createdAt'] != null
+            ? (map['createdAt'] is DateTime
+                ? map['createdAt'] as DateTime
+                : (map['createdAt'] as dynamic).toDate())
+            : DateTime.now(),
       );
 
   ProviderModel copyWith({

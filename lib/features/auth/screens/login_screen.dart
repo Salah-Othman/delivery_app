@@ -112,7 +112,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                   color: Colors.white,
                                 ),
                               )
-<<<<<<< HEAD
                             : const Text('تسجيل الدخول برقم الموبايل'),
                       ),
                     );
@@ -165,9 +164,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         label: const Text('تسجيل الدخول بواسطة Google'),
-=======
-                            : const Text('تسجيل الدخول'),
->>>>>>> bbc6f8fa6ca2b08fd8d4f51b35938d2a6ba1a1ee
                       ),
                     );
                   },
