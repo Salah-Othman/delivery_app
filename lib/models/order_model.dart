@@ -53,6 +53,7 @@ class OrderModel {
   final String id;
   final String userId;
   final String? providerId;
+  final String? providerPhone;
   final String serviceType;
   final String description;
   final OrderStatus status;
@@ -68,6 +69,7 @@ class OrderModel {
     required this.id,
     required this.userId,
     this.providerId,
+    this.providerPhone,
     required this.serviceType,
     required this.description,
     this.status = OrderStatus.pending,
@@ -84,6 +86,7 @@ class OrderModel {
         'id': id,
         'userId': userId,
         'providerId': providerId,
+        'providerPhone': providerPhone,
         'serviceType': serviceType,
         'description': description,
         'status': status.name,
@@ -101,6 +104,7 @@ class OrderModel {
         id: id,
         userId: map['userId'] as String,
         providerId: map['providerId'] as String?,
+        providerPhone: map['providerPhone'] as String?,
         serviceType: map['serviceType'] as String,
         description: map['description'] as String,
         status: OrderStatus.fromString(map['status'] as String? ?? 'pending'),

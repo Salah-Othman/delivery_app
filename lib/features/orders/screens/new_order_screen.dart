@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/error_utils.dart';
 import '../../../core/routes.dart';
+import '../../../models/service_category.dart';
 import '../../../models/order_model.dart';
 import '../../auth/cubit/auth_cubit.dart';
 import '../../auth/cubit/auth_state.dart';
@@ -79,14 +80,9 @@ class _NewOrderScreenState extends State<NewOrderScreen> {
                   _SectionLabel(text: 'اختر الخدمة'),
                   DropdownButtonFormField<String>(
                     initialValue: _selectedService,
-                    items: const [
-                      DropdownMenuItem(value: 'سباكة', child: Text('سباكة')),
-                      DropdownMenuItem(value: 'كهرباء', child: Text('كهرباء')),
-                      DropdownMenuItem(value: 'تكييف', child: Text('تكييف')),
-                      DropdownMenuItem(value: 'نجارة', child: Text('نجارة')),
-                      DropdownMenuItem(value: 'دهان', child: Text('دهان')),
-                      DropdownMenuItem(value: 'توصيل', child: Text('توصيل')),
-                    ],
+                    items: AppCategories.categories.map((c) {
+                      return DropdownMenuItem(value: c.name, child: Text(c.name));
+                    }).toList(),
                     onChanged: loading
                         ? null
                         : (v) => setState(() => _selectedService = v!),

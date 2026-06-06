@@ -15,9 +15,14 @@ class OrderService {
       _firestore.collection(AppConstants.firebaseCollectionOrders);
 
   Future<String> createOrder(OrderModel order) async {
-    final doc = _orders.doc();
-    await doc.set(order.toMap());
-    return doc.id;
+    try {
+      final doc = _orders.doc();
+      await doc.set(order.toMap());
+      return doc.id;
+    } catch (e, s) {
+      logError(e, s, context: 'OrderService.createOrder');
+      rethrow;
+    }
   }
 
   Future<void> updateOrderStatus(String orderId, OrderStatus status) async {

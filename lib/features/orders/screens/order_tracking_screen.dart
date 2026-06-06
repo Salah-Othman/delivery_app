@@ -90,7 +90,12 @@ class OrderTrackingScreen extends StatelessWidget {
 
   Future<void> _callProvider(BuildContext context, OrderModel order) async {
     try {
-      final uri = Uri.parse('tel:');
+      final phone = order.providerPhone ?? '';
+      if (phone.isEmpty) {
+        if (context.mounted) showErrorSnackBar(context, 'رقم الهاتف غير متاح');
+        return;
+      }
+      final uri = Uri.parse('tel:$phone');
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri);
       }

@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../core/app_exception.dart';
 import '../../core/error_utils.dart';
 import '../../features/auth/services/auth_service.dart';
 import '../../features/notifications/services/notification_service.dart';
@@ -62,8 +63,9 @@ class ProviderAuthCubit extends Cubit<ProviderAuthState> {
 
       await _notificationService.saveTokenToFirestore(user.id);
       emit(ProviderAuthVerified(provider: provider));
-    } catch (e) {
-      emit(ProviderAuthError(message: _errorMessage(e)));
+    } catch (e, s) {
+      logError(e, s, context: 'ProviderAuthCubit.signIn');
+      emit(ProviderAuthError(message: firestoreErrorMessage(e)));
     }
   }
 
@@ -82,16 +84,4 @@ class ProviderAuthCubit extends Cubit<ProviderAuthState> {
   }
 
   void reset() => emit(const ProviderAuthInitial());
-
-  String _errorMessage(Object e) {
-    final msg = e.toString();
-    if (msg.contains('user-not-found')) return 'لا يوجد حساب بهذا البريد الإلكتروني';
-    if (msg.contains('wrong-password')) return 'كلمة المرور غير صحيحة';
-    if (msg.contains('invalid-credential')) return 'البريد الإلكتروني أو كلمة المرور غير صحيحة';
-    if (msg.contains('invalid-email')) return 'البريد الإلكتروني غير صحيح';
-    if (msg.contains('user-disabled')) return 'تم تعطيل هذا الحساب';
-    if (msg.contains('too-many-requests')) return 'حاول مرة أخرى بعد قليل';
-    if (msg.contains('network-request-failed')) return 'مشكلة في الاتصال، حاول مرة أخرى';
-    return 'حدث خطأ، حاول مرة أخرى';
-  }
 }

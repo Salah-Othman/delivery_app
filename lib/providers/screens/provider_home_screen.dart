@@ -3,10 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../core/error_utils.dart';
 import '../../core/location_service.dart';
 import '../../core/routes.dart';
 import '../../features/orders/services/order_service.dart';
 import '../../models/order_model.dart';
+import '../../models/provider_model.dart';
 import '../../shared/widgets/loading_widget.dart';
 import '../cubit/provider_auth_cubit.dart';
 import '../cubit/provider_auth_state.dart';
@@ -50,7 +52,9 @@ class _ProviderHomeScreenState extends State<ProviderHomeScreen> {
             location.longitude,
           );
         }
-      } catch (_) {}
+      } catch (e, s) {
+        logError(e, s, context: 'ProviderHomeScreen._startLocationUpdates');
+      }
     });
   }
 
@@ -68,7 +72,7 @@ class _ProviderHomeScreenState extends State<ProviderHomeScreen> {
 }
 
 class _ProviderHomeBody extends StatefulWidget {
-  final dynamic provider;
+  final ProviderModel provider;
 
   const _ProviderHomeBody({required this.provider});
 
@@ -149,7 +153,7 @@ class _ProviderHomeBodyState extends State<_ProviderHomeBody> {
 }
 
 class _AvailabilityCard extends StatelessWidget {
-  final dynamic provider;
+  final ProviderModel provider;
   const _AvailabilityCard({required this.provider});
 
   @override

@@ -28,7 +28,7 @@ class ProviderProfileScreen extends StatelessWidget {
                 icon: const Icon(Icons.logout_rounded),
                 onPressed: () {
                   context.read<ProviderAuthCubit>().signOut();
-                    Navigator.pushNamedAndRemoveUntil(
+                  Navigator.pushNamedAndRemoveUntil(
                     context,
                     AppRoutes.login,
                     (_) => false,
@@ -160,26 +160,6 @@ class ProviderProfileScreen extends StatelessWidget {
                       const SizedBox(height: 12),
                       _RecentReviews(providerId: provider.id),
                     ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    context.read<ProviderAuthCubit>().signOut();
-                    Navigator.pushNamedAndRemoveUntil(
-                      context,
-                      AppRoutes.login,
-                      (_) => false,
-                    );
-                  },
-                  icon: const Icon(Icons.logout_rounded),
-                  label: const Text('تسجيل الخروج'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.red.shade700,
-                    side: BorderSide(color: Colors.red.shade300),
                   ),
                 ),
               ),

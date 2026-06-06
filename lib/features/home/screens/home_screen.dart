@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants.dart';
 import '../../../core/routes.dart';
+import '../../../models/service_category.dart';
 import '../../../models/order_model.dart';
 import '../../../shared/widgets/empty_state_widget.dart';
 import '../../../shared/widgets/loading_widget.dart';
@@ -13,14 +14,19 @@ import '../../orders/services/order_service.dart';
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
-  static const _categories = [
-    _ServiceCategory('تكييف', Icons.ac_unit_rounded),
-    _ServiceCategory('سباكة', Icons.water_drop_rounded),
-    _ServiceCategory('كهرباء', Icons.bolt_rounded),
-    _ServiceCategory('نجارة', Icons.handyman_rounded),
-    _ServiceCategory('دهان', Icons.format_paint_rounded),
-    _ServiceCategory('توصيل', Icons.delivery_dining_rounded),
-  ];
+  static final _categories = AppCategories.categories.map((c) {
+    final icon = _iconMap[c.icon] ?? Icons.handyman_rounded;
+    return _ServiceCategory(c.name, icon);
+  }).toList();
+
+  static const _iconMap = {
+    'ac_unit': Icons.ac_unit_rounded,
+    'water_drop': Icons.water_drop_rounded,
+    'bolt': Icons.bolt_rounded,
+    'handyman': Icons.handyman_rounded,
+    'format_paint': Icons.format_paint_rounded,
+    'delivery_dining': Icons.delivery_dining_rounded,
+  };
 
   @override
   Widget build(BuildContext context) {

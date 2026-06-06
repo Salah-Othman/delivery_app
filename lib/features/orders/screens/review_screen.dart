@@ -133,7 +133,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
         showSuccessSnackBar(context, 'تم إرسال التقييم، شكراً لك!');
         Navigator.pop(context);
       }
-    } catch (e) {
+    } catch (e, s) {
+      logError(e, s, context: 'ReviewScreen._submitReview');
       if (mounted) {
         showErrorSnackBar(context, 'حدث خطأ أثناء إرسال التقييم');
       }
