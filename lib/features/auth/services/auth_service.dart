@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+import '../../../core/error_utils.dart';
 import '../../../models/user_model.dart';
 
 class AuthService {
@@ -81,9 +82,14 @@ class AuthService {
   }
 
   Future<void> signOut() async {
-    await Future.wait([
-      _auth.signOut(),
-      _googleSignIn.signOut(),
-    ]);
+    try {
+      await Future.wait([
+        _auth.signOut(),
+        _googleSignIn.signOut(),
+      ]);
+    } catch (e, s) {
+      logError(e, s, context: 'AuthService.signOut');
+      rethrow;
+    }
   }
 }

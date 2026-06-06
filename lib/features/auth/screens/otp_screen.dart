@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/error_utils.dart';
 import '../../../core/routes.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
@@ -31,9 +32,7 @@ class _OtpScreenState extends State<OtpScreen> {
           Navigator.pushNamedAndRemoveUntil(
               context, AppRoutes.home, (_) => false);
         } else if (state is AuthError) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message)),
-          );
+          showErrorSnackBar(context, state.message);
         }
       },
       child: Scaffold(

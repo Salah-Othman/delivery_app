@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/error_utils.dart';
 import '../../../core/routes.dart';
 import '../../../models/order_model.dart';
 import '../../auth/cubit/auth_cubit.dart';
@@ -234,9 +235,7 @@ class _NewOrderScreenState extends State<NewOrderScreen> {
   }
 
   void _showSnackBar(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    showErrorSnackBar(context, message);
   }
 }
 

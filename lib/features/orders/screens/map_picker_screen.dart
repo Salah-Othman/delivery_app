@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../../core/error_utils.dart';
 import '../../../core/location_service.dart';
 
 class MapPickerResult {
@@ -60,15 +61,22 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
     _updateAddress(center.latitude, center.longitude);
   }
 
-  void _goToMyLocation() async {
-    final loc = await _locationService.getCurrentLocation();
-    if (loc != null && mounted) {
-      _mapController.move(
-        LatLng(loc.latitude, loc.longitude),
-        _mapController.camera.zoom,
-      );
-      setState(() => _center = LatLng(loc.latitude, loc.longitude));
-      _updateAddress(loc.latitude, loc.longitude);
+  Future<void> _goToMyLocation() async {
+    try {
+      final loc = await _locationService.getCurrentLocation();
+      if (loc != null && mounted) {
+        _mapController.move(
+          LatLng(loc.latitude, loc.longitude),
+          _mapController.camera.zoom,
+        );
+        setState(() => _center = LatLng(loc.latitude, loc.longitude));
+        _updateAddress(loc.latitude, loc.longitude);
+      }
+    } catch (e, s) {
+      logError(e, s, context: 'MapPickerScreen._goToMyLocation');
+      if (mounted) {
+        showErrorSnackBar(context, 'تعذر الحصول على الموقع الحالي');
+      }
     }
   }
 

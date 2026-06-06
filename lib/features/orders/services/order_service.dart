@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../../../core/error_utils.dart';
 import '../../../models/order_model.dart';
 import '../../../models/review_model.dart';
 import '../../../core/constants.dart';
@@ -20,24 +21,38 @@ class OrderService {
   }
 
   Future<void> updateOrderStatus(String orderId, OrderStatus status) async {
-    await _orders.doc(orderId).update({
-      'status': status.name,
-      if (status == OrderStatus.completed) 'completedAt': DateTime.now(),
-    });
+    try {
+      await _orders.doc(orderId).update({
+        'status': status.name,
+        if (status == OrderStatus.completed) 'completedAt': DateTime.now(),
+      });
+    } catch (e, s) {
+      logError(e, s, context: 'OrderService.updateOrderStatus');
+      rethrow;
+    }
   }
 
   Future<void> assignProvider(String orderId, String providerId) async {
-    await _orders.doc(orderId).update({
-      'providerId': providerId,
-      'status': OrderStatus.accepted.name,
-    });
+    try {
+      await _orders.doc(orderId).update({
+        'providerId': providerId,
+        'status': OrderStatus.accepted.name,
+      });
+    } catch (e, s) {
+      logError(e, s, context: 'OrderService.assignProvider');
+      rethrow;
+    }
   }
 
   Stream<OrderModel?> orderStream(String orderId) {
-    return _orders.doc(orderId).snapshots().map(
+    return _orders
+        .doc(orderId)
+        .snapshots()
+        .map(
           (snap) =>
               snap.exists ? OrderModel.fromMap(snap.data()!, snap.id) : null,
-        );
+        )
+        .handleError((e, s) => logError(e, s, context: 'OrderService.orderStream'));
   }
 
   Stream<List<OrderModel>> userOrdersStream(String userId) {
@@ -49,7 +64,9 @@ class OrderService {
           (snap) => snap.docs
               .map((doc) => OrderModel.fromMap(doc.data(), doc.id))
               .toList(),
-        );
+        )
+        .handleError(
+            (e, s) => logError(e, s, context: 'OrderService.userOrdersStream'));
   }
 
   Stream<List<OrderModel>> providerOrdersStream(String providerId) {
@@ -61,14 +78,21 @@ class OrderService {
           (snap) => snap.docs
               .map((doc) => OrderModel.fromMap(doc.data(), doc.id))
               .toList(),
-        );
+        )
+        .handleError((e, s) =>
+            logError(e, s, context: 'OrderService.providerOrdersStream'));
   }
 
   Future<void> addReview(ReviewModel review) async {
-    await _firestore
-        .collection(AppConstants.firebaseCollectionReviews)
-        .doc(review.id)
-        .set(review.toMap());
+    try {
+      await _firestore
+          .collection(AppConstants.firebaseCollectionReviews)
+          .doc(review.id)
+          .set(review.toMap());
+    } catch (e, s) {
+      logError(e, s, context: 'OrderService.addReview');
+      rethrow;
+    }
   }
 
   Stream<List<ReviewModel>> providerReviewsStream(String providerId) {
@@ -81,15 +105,22 @@ class OrderService {
           (snap) => snap.docs
               .map((doc) => ReviewModel.fromMap(doc.data(), doc.id))
               .toList(),
-        );
+        )
+        .handleError((e, s) =>
+            logError(e, s, context: 'OrderService.providerReviewsStream'));
   }
 
   Future<List<OrderModel>> getPendingOrders() async {
-    final snap = await _orders
-        .where('status', isEqualTo: OrderStatus.pending.name)
-        .get();
-    return snap.docs
-        .map((doc) => OrderModel.fromMap(doc.data(), doc.id))
-        .toList();
+    try {
+      final snap = await _orders
+          .where('status', isEqualTo: OrderStatus.pending.name)
+          .get();
+      return snap.docs
+          .map((doc) => OrderModel.fromMap(doc.data(), doc.id))
+          .toList();
+    } catch (e, s) {
+      logError(e, s, context: 'OrderService.getPendingOrders');
+      rethrow;
+    }
   }
 }

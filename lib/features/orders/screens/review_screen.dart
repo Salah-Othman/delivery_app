@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/error_utils.dart';
 import '../../../models/order_model.dart';
 import '../../../models/review_model.dart';
 import '../services/order_service.dart';
@@ -129,16 +130,12 @@ class _ReviewScreenState extends State<ReviewScreen> {
       await orderService.addReview(review);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم إرسال التقييم، شكراً لك!')),
-        );
+        showSuccessSnackBar(context, 'تم إرسال التقييم، شكراً لك!');
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('حدث خطأ أثناء إرسال التقييم')),
-        );
+        showErrorSnackBar(context, 'حدث خطأ أثناء إرسال التقييم');
       }
     } finally {
       if (mounted) setState(() => _submitting = false);

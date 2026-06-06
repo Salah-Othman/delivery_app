@@ -18,7 +18,14 @@ class OrderHistoryScreen extends StatefulWidget {
 }
 
 class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
-  final OrderService _orderService = OrderService();
+  OrderService? _orderService;
+
+  OrderService _getService() {
+    _orderService ??= OrderService();
+    return _orderService!;
+  }
+
+  void _retry() => setState(() {});
 
   @override
   Widget build(BuildContext context) {
@@ -33,10 +40,11 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
       );
     }
 
+    final service = _getService();
     return Scaffold(
       appBar: AppBar(title: const Text('طلباتي')),
       body: StreamBuilder<List<OrderModel>>(
-        stream: _orderService.userOrdersStream(authState.user.id),
+        stream: service.userOrdersStream(authState.user.id),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const LoadingWidget();
@@ -44,7 +52,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
           if (snapshot.hasError) {
             return AppErrorWidget(
               message: 'حدث خطأ أثناء تحميل الطلبات',
-              onRetry: () => setState(() {}),
+              onRetry: _retry,
             );
           }
           final orders = snapshot.data ?? [];
@@ -56,7 +64,10 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
             );
           }
           return RefreshIndicator(
-            onRefresh: () async => setState(() {}),
+            onRefresh: () async {
+              _retry();
+              await Future.delayed(const Duration(milliseconds: 300));
+            },
             child: ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: orders.length,

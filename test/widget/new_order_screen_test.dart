@@ -41,6 +41,7 @@ void main() {
     expect(find.text('اختر الخدمة'), findsOneWidget);
     expect(find.text('وصف المشكلة'), findsOneWidget);
     expect(find.text('العنوان'), findsOneWidget);
+    expect(find.text('اختر الموقع على الخريطة'), findsOneWidget);
     expect(find.text('السعر المقترح'), findsOneWidget);
 
     await tester.drag(find.byType(ListView), const Offset(0, -400));
@@ -48,5 +49,39 @@ void main() {
     await tester.pump();
 
     expect(find.text('إرسال الطلب'), findsOneWidget);
+  });
+
+  testWidgets('NewOrderScreen map picker button opens MapPickerScreen',
+      (WidgetTester tester) async {
+    final mockService = MockOrderService();
+    final cubit = OrderCubit(orderService: mockService);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('ar'),
+        supportedLocales: const [Locale('ar')],
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        theme: AppTheme.light,
+        home: NewOrderScreen(orderCubit: cubit),
+        routes: {
+          AppRoutes.home: (_) => const Scaffold(),
+          AppRoutes.orderTracking: (_) => const Scaffold(),
+        },
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('اختر الموقع على الخريطة'), findsOneWidget);
+
+    await tester.tap(find.text('اختر الموقع على الخريطة'));
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('اختيار الموقع'), findsOneWidget);
   });
 }

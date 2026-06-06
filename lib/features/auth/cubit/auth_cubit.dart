@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/error_utils.dart';
 import '../../notifications/services/notification_service.dart';
 import '../services/auth_service.dart';
 import 'auth_state.dart';
@@ -72,18 +73,24 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> signOut() async {
-    final user = _authService.currentUser();
-    if (user != null) {
-      await NotificationService().deleteTokenFromFirestore(user.id);
+    try {
+      final user = _authService.currentUser();
+      if (user != null) {
+        await NotificationService().deleteTokenFromFirestore(user.id);
+      }
+      await _authService.signOut();
+    } catch (e, s) {
+      logError(e, s, context: 'AuthCubit.signOut');
     }
-    await _authService.signOut();
     emit(const AuthInitial());
   }
 
   Future<void> _saveFcmToken(String userId) async {
     try {
       await NotificationService().saveTokenToFirestore(userId);
-    } catch (_) {}
+    } catch (e, s) {
+      logError(e, s, context: 'AuthCubit._saveFcmToken');
+    }
   }
 
   void reset() => emit(const AuthInitial());

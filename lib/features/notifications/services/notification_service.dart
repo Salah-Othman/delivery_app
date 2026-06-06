@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 
+import '../../../core/error_utils.dart';
 import '../../../core/routes.dart';
 
 class NotificationService {
@@ -20,23 +21,27 @@ class NotificationService {
   }
 
   Future<void> initialize() async {
-    final settings = await _messaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
+    try {
+      final settings = await _messaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
 
-    if (settings.authorizationStatus == AuthorizationStatus.authorized ||
-        settings.authorizationStatus == AuthorizationStatus.provisional) {
-      _token = await _messaging.getToken();
+      if (settings.authorizationStatus == AuthorizationStatus.authorized ||
+          settings.authorizationStatus == AuthorizationStatus.provisional) {
+        _token = await _messaging.getToken();
 
-      FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
-      FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationTap);
+        FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+        FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationTap);
 
-      final initialMessage = await _messaging.getInitialMessage();
-      if (initialMessage != null) {
-        _handleNotificationTap(initialMessage);
+        final initialMessage = await _messaging.getInitialMessage();
+        if (initialMessage != null) {
+          _handleNotificationTap(initialMessage);
+        }
       }
+    } catch (e, s) {
+      logError(e, s, context: 'NotificationService.initialize');
     }
   }
 
@@ -76,19 +81,33 @@ class NotificationService {
 
   Future<void> saveTokenToFirestore(String userId) async {
     if (_token == null) return;
-    await FirebaseFirestore.instance.collection('users').doc(userId).update({
-      'fcmToken': _token,
-    });
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .update({'fcmToken': _token});
+    } catch (e, s) {
+      logError(e, s, context: 'NotificationService.saveTokenToFirestore');
+    }
   }
 
   Future<void> deleteTokenFromFirestore(String userId) async {
-    await FirebaseFirestore.instance.collection('users').doc(userId).update({
-      'fcmToken': FieldValue.delete(),
-    });
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .update({'fcmToken': FieldValue.delete()});
+    } catch (e, s) {
+      logError(e, s, context: 'NotificationService.deleteTokenFromFirestore');
+    }
   }
 
   Future<void> deleteToken() async {
-    await _messaging.deleteToken();
-    _token = null;
+    try {
+      await _messaging.deleteToken();
+      _token = null;
+    } catch (e, s) {
+      logError(e, s, context: 'NotificationService.deleteToken');
+    }
   }
 }

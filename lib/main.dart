@@ -1,8 +1,12 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
 import 'core/connectivity_service.dart';
+import 'core/error_utils.dart';
 import 'core/firebase_service.dart';
 import 'core/routes.dart';
 import 'core/theme.dart';
@@ -19,12 +23,35 @@ import 'features/splash/screens/splash_screen.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await FirebaseService.initialize();
+
+  FlutterError.onError = (details) {
+    FirebaseCrashlytics.instance.recordFlutterError(details);
+  };
+
+  PlatformDispatcher.instance.onError = (error, stack) {
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    return true;
+  };
+
+  try {
+    await FirebaseService.initialize();
+  } catch (e, s) {
+    logError(e, s, context: 'FirebaseService.initialize');
+  }
+
   NotificationService().setNavigatorKey(navigatorKey);
-  NotificationService().initialize();
-  await ConnectivityService().initialize();
+  NotificationService().initialize().catchError((e, s) {
+    logError(e, s, context: 'NotificationService.initialize');
+  });
+
+  try {
+    await ConnectivityService().initialize();
+  } catch (e, s) {
+    logError(e, s, context: 'ConnectivityService.initialize');
+  }
+
   runApp(const EidWahdaApp());
 }
 

@@ -1,6 +1,8 @@
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 
+import 'error_utils.dart';
+
 class LocationResult {
   final double latitude;
   final double longitude;
@@ -15,35 +17,45 @@ class LocationResult {
 
 class LocationService {
   Future<bool> requestPermission() async {
-    final enabled = await Geolocator.isLocationServiceEnabled();
-    if (!enabled) return false;
+    try {
+      final enabled = await Geolocator.isLocationServiceEnabled();
+      if (!enabled) return false;
 
-    var status = await Geolocator.checkPermission();
-    if (status == LocationPermission.denied) {
-      status = await Geolocator.requestPermission();
+      var status = await Geolocator.checkPermission();
+      if (status == LocationPermission.denied) {
+        status = await Geolocator.requestPermission();
+      }
+      return status == LocationPermission.whileInUse ||
+          status == LocationPermission.always;
+    } catch (e, s) {
+      logError(e, s, context: 'LocationService.requestPermission');
+      return false;
     }
-    return status == LocationPermission.whileInUse ||
-        status == LocationPermission.always;
   }
 
   Future<LocationResult?> getCurrentLocation() async {
-    final hasPermission = await requestPermission();
-    if (!hasPermission) return null;
+    try {
+      final hasPermission = await requestPermission();
+      if (!hasPermission) return null;
 
-    final pos = await Geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 10,
-      ),
-    );
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          distanceFilter: 10,
+        ),
+      );
 
-    final address = await _reverseGeocode(pos.latitude, pos.longitude);
+      final address = await _reverseGeocode(pos.latitude, pos.longitude);
 
-    return LocationResult(
-      latitude: pos.latitude,
-      longitude: pos.longitude,
-      address: address,
-    );
+      return LocationResult(
+        latitude: pos.latitude,
+        longitude: pos.longitude,
+        address: address,
+      );
+    } catch (e, s) {
+      logError(e, s, context: 'LocationService.getCurrentLocation');
+      return null;
+    }
   }
 
   Future<String> _reverseGeocode(double lat, double lng) async {

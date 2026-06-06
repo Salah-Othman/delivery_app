@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 
+import 'error_utils.dart';
+
 class ConnectivityService {
   static final ConnectivityService _instance = ConnectivityService._();
   factory ConnectivityService() => _instance;
@@ -18,9 +20,13 @@ class ConnectivityService {
   Stream<bool> get onStatusChanged => _controller.stream;
 
   Future<void> initialize() async {
-    final results = await _connectivity.checkConnectivity();
-    _updateStatus(results);
-    _subscription = _connectivity.onConnectivityChanged.listen(_updateStatus);
+    try {
+      final results = await _connectivity.checkConnectivity();
+      _updateStatus(results);
+      _subscription = _connectivity.onConnectivityChanged.listen(_updateStatus);
+    } catch (e, s) {
+      logError(e, s, context: 'ConnectivityService.initialize');
+    }
   }
 
   void _updateStatus(List<ConnectivityResult> results) {

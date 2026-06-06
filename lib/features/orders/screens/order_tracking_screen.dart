@@ -3,6 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/error_utils.dart';
 import '../../../models/order_model.dart';
 import '../../../shared/widgets/error_widget.dart';
 import '../../orders/services/order_service.dart';
@@ -88,11 +89,16 @@ class OrderTrackingScreen extends StatelessWidget {
   }
 
   Future<void> _callProvider(BuildContext context, OrderModel order) async {
-    // TODO: Fetch provider phone from Firestore and pass it here
-    // For now, prompt user to call the provider directly
-    final uri = Uri.parse('tel:');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
+    try {
+      final uri = Uri.parse('tel:');
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri);
+      }
+    } catch (e, s) {
+      logError(e, s, context: 'OrderTrackingScreen._callProvider');
+      if (context.mounted) {
+        showErrorSnackBar(context, 'تعذر فتح تطبيق الاتصال');
+      }
     }
   }
 }
