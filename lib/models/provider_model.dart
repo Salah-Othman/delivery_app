@@ -1,5 +1,6 @@
 class ProviderModel {
   final String id;
+  final String email;
   final String phone;
   final String name;
   final List<String> services;
@@ -9,10 +10,12 @@ class ProviderModel {
   final double rating;
   final int totalOrders;
   final double commission;
+  final double totalEarnings;
   final DateTime createdAt;
 
   ProviderModel({
     required this.id,
+    required this.email,
     required this.phone,
     required this.name,
     this.services = const [],
@@ -22,11 +25,13 @@ class ProviderModel {
     this.rating = 0,
     this.totalOrders = 0,
     this.commission = 0.10,
+    this.totalEarnings = 0,
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
   Map<String, dynamic> toMap() => {
         'id': id,
+        'email': email,
         'phone': phone,
         'name': name,
         'services': services,
@@ -36,12 +41,14 @@ class ProviderModel {
         'rating': rating,
         'totalOrders': totalOrders,
         'commission': commission,
+        'totalEarnings': totalEarnings,
         'createdAt': createdAt,
       };
 
   factory ProviderModel.fromMap(Map<String, dynamic> map, String id) =>
       ProviderModel(
         id: id,
+        email: map['email'] as String? ?? '',
         phone: map['phone'] as String? ?? '',
         name: map['name'] as String? ?? '',
         services: List<String>.from(map['services'] ?? []),
@@ -51,6 +58,7 @@ class ProviderModel {
         rating: (map['rating'] as num?)?.toDouble() ?? 0,
         totalOrders: (map['totalOrders'] as num?)?.toInt() ?? 0,
         commission: (map['commission'] as num?)?.toDouble() ?? 0.10,
+        totalEarnings: (map['totalEarnings'] as num?)?.toDouble() ?? 0,
         createdAt: map['createdAt'] != null
             ? (map['createdAt'] is DateTime
                 ? map['createdAt'] as DateTime
@@ -59,16 +67,19 @@ class ProviderModel {
       );
 
   ProviderModel copyWith({
+    String? name,
     bool? available,
     double? lat,
     double? lng,
     double? rating,
     int? totalOrders,
+    double? totalEarnings,
   }) =>
       ProviderModel(
         id: id,
+        email: email,
         phone: phone,
-        name: name,
+        name: name ?? this.name,
         services: services,
         available: available ?? this.available,
         lat: lat ?? this.lat,
@@ -76,6 +87,7 @@ class ProviderModel {
         rating: rating ?? this.rating,
         totalOrders: totalOrders ?? this.totalOrders,
         commission: commission,
+        totalEarnings: totalEarnings ?? this.totalEarnings,
         createdAt: createdAt,
       );
 }

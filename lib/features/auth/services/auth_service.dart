@@ -1,18 +1,12 @@
-import 'dart:async';
-
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../../core/error_utils.dart';
 import '../../../models/user_model.dart';
 
 class AuthService {
-  FirebaseAuth get _auth => FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final FirebaseAuth _auth;
 
-  String? _verificationId;
-
-  String? get verificationId => _verificationId;
+  AuthService({FirebaseAuth? auth}) : _auth = auth ?? FirebaseAuth.instance;
 
   UserModel? currentUser() {
     try {
@@ -31,62 +25,28 @@ class AuthService {
 
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
-  Future<String> sendOtp(String phone) async {
-    final completer = Completer<String>();
-    String? storedVerificationId;
-
-    await _auth.verifyPhoneNumber(
-      phoneNumber: phone,
-      verificationCompleted: (credential) async {
-        await _auth.signInWithCredential(credential);
-        if (storedVerificationId != null) {
-          completer.complete(storedVerificationId);
-        }
-      },
-      verificationFailed: (e) {
-        completer.completeError(e);
-      },
-      codeSent: (verificationId, resendToken) {
-        _verificationId = verificationId;
-        storedVerificationId = verificationId;
-        completer.complete(verificationId);
-      },
-      codeAutoRetrievalTimeout: (verificationId) {
-        _verificationId = verificationId;
-      },
-    );
-
-    return completer.future;
+  Future<UserCredential> signInWithEmail(
+      String email, String password) async {
+    return await _auth.signInWithEmailAndPassword(
+        email: email, password: password);
   }
 
-  Future<UserCredential> verifyOtp(String smsCode) async {
-    final credential = PhoneAuthProvider.credential(
-      verificationId: _verificationId!,
-      smsCode: smsCode,
-    );
-    return await _auth.signInWithCredential(credential);
+  Future<UserCredential> createAccount(
+      String email, String password) async {
+    return await _auth.createUserWithEmailAndPassword(
+        email: email, password: password);
   }
 
-  Future<UserCredential> signInWithGoogle() async {
-    final googleUser = await _googleSignIn.signIn();
-    if (googleUser == null) {
-      throw Exception('user-cancelled');
+  Future<void> updateDisplayName(String name) async {
+    final user = _auth.currentUser;
+    if (user != null) {
+      await user.updateDisplayName(name);
     }
-
-    final googleAuth = await googleUser.authentication;
-    final credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
-    );
-    return await _auth.signInWithCredential(credential);
   }
 
   Future<void> signOut() async {
     try {
-      await Future.wait([
-        _auth.signOut(),
-        _googleSignIn.signOut(),
-      ]);
+      await _auth.signOut();
     } catch (e, s) {
       logError(e, s, context: 'AuthService.signOut');
       rethrow;

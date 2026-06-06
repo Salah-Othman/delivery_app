@@ -1,18 +1,25 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../../core/error_utils.dart';
+import '../../../core/constants.dart';
+import '../../../models/user_model.dart';
 import '../../notifications/services/notification_service.dart';
 import '../services/auth_service.dart';
 import 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
   final AuthService _authService;
+  final FirebaseFirestore? _firestore;
 
-  AuthCubit({AuthService? authService})
+  AuthCubit({AuthService? authService, FirebaseFirestore? firestore})
       : _authService = authService ?? AuthService(),
+        _firestore = firestore,
         super(const AuthInitial()) {
     _checkAuthState();
   }
+
+  FirebaseFirestore get _db => _firestore ?? FirebaseFirestore.instance;
 
   void _checkAuthState() {
     final user = _authService.currentUser();
@@ -22,26 +29,13 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
-  Future<void> signInWithPhone(String phone) async {
+  Future<void> signIn(String email, String password) async {
     emit(const AuthLoading());
     try {
-      final verificationId = await _authService.sendOtp(phone);
-      emit(AuthCodeSent(
-        verificationId: verificationId,
-        phone: phone,
-      ));
-    } catch (e) {
-      emit(AuthError(message: _errorMessage(e)));
-    }
-  }
-
-  Future<void> verifyOtp(String smsCode) async {
-    emit(const AuthLoading());
-    try {
-      await _authService.verifyOtp(smsCode);
+      await _authService.signInWithEmail(email, password);
       final user = _authService.currentUser();
       if (user != null) {
-        await _saveFcmToken(user.id);
+        await _ensureUserDoc(user);
         emit(AuthVerified(user: user));
       } else {
         emit(const AuthError(message: 'حدث خطأ، حاول مرة أخرى'));
@@ -51,24 +45,46 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
-  Future<void> signInWithGoogle() async {
+  Future<void> signUp(String email, String password, String name) async {
     emit(const AuthLoading());
     try {
-      await _authService.signInWithGoogle();
-      final user = _authService.currentUser();
-      if (user != null) {
-        await _saveFcmToken(user.id);
-        emit(AuthVerified(user: user));
-      } else {
-        emit(const AuthError(message: 'حدث خطأ، حاول مرة أخرى'));
-      }
+      final credential = await _authService.createAccount(email, password);
+      await _authService.updateDisplayName(name);
+
+      final firebaseUser = credential.user!;
+      final user = UserModel(
+        id: firebaseUser.uid,
+        phone: '',
+        email: email,
+        name: name,
+      );
+
+      await _db
+          .collection(AppConstants.firebaseCollectionUsers)
+          .doc(firebaseUser.uid)
+          .set(user.toMap());
+
+      await _saveFcmToken(firebaseUser.uid);
+      emit(AuthVerified(user: user));
     } catch (e) {
-      final msg = e.toString();
-      if (msg.contains('user-cancelled') || msg.contains('CANCELED')) {
-        emit(const AuthInitial());
-      } else {
-        emit(AuthError(message: _errorMessage(e)));
+      emit(AuthError(message: _errorMessage(e)));
+    }
+  }
+
+  Future<void> _ensureUserDoc(UserModel user) async {
+    try {
+      final doc = await _db
+          .collection(AppConstants.firebaseCollectionUsers)
+          .doc(user.id)
+          .get();
+      if (!doc.exists) {
+        await _db
+            .collection(AppConstants.firebaseCollectionUsers)
+            .doc(user.id)
+            .set(user.toMap());
       }
+    } catch (e, s) {
+      logError(e, s, context: 'AuthCubit._ensureUserDoc');
     }
   }
 
@@ -97,13 +113,15 @@ class AuthCubit extends Cubit<AuthState> {
 
   String _errorMessage(Object e) {
     final msg = e.toString();
-    if (msg.contains('invalid-phone-number')) return 'رقم الهاتف غير صحيح';
+    if (msg.contains('user-not-found')) return 'لا يوجد حساب بهذا البريد الإلكتروني';
+    if (msg.contains('wrong-password')) return 'كلمة المرور غير صحيحة';
+    if (msg.contains('invalid-credential')) return 'البريد الإلكتروني أو كلمة المرور غير صحيحة';
+    if (msg.contains('invalid-email')) return 'البريد الإلكتروني غير صحيح';
+    if (msg.contains('email-already-in-use')) return 'البريد الإلكتروني مستخدم بالفعل';
+    if (msg.contains('weak-password')) return 'كلمة المرور ضعيفة جداً (6 أحرف على الأقل)';
+    if (msg.contains('user-disabled')) return 'تم تعطيل هذا الحساب';
     if (msg.contains('too-many-requests')) return 'حاول مرة أخرى بعد قليل';
-    if (msg.contains('invalid-verification-code')) return 'رمز التحقق غير صحيح';
     if (msg.contains('network-request-failed')) return 'مشكلة في الاتصال، حاول مرة أخرى';
-    if (msg.contains('account-exists-with-different-credential')) {
-      return 'هذا الحساب مرتبط بطريقة تسجيل دخول أخرى';
-    }
     return 'حدث خطأ، حاول مرة أخرى';
   }
 }

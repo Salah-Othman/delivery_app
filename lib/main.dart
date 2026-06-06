@@ -11,8 +11,8 @@ import 'core/firebase_service.dart';
 import 'core/routes.dart';
 import 'core/theme.dart';
 import 'features/auth/cubit/auth_cubit.dart';
+import 'features/auth/cubit/auth_state.dart';
 import 'features/auth/screens/login_screen.dart';
-import 'features/auth/screens/otp_screen.dart';
 import 'features/home/screens/home_screen.dart';
 import 'features/notifications/services/notification_service.dart';
 import 'features/orders/screens/new_order_screen.dart';
@@ -20,6 +20,12 @@ import 'features/orders/screens/order_tracking_screen.dart';
 import 'features/orders/screens/order_history_screen.dart';
 import 'features/profile/screens/profile_screen.dart';
 import 'features/splash/screens/splash_screen.dart';
+import 'providers/cubit/provider_auth_cubit.dart';
+import 'providers/cubit/provider_auth_state.dart';
+import 'providers/screens/provider_home_screen.dart';
+import 'providers/screens/provider_orders_screen.dart';
+import 'providers/screens/provider_earnings_screen.dart';
+import 'providers/screens/provider_profile_screen.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -75,8 +81,11 @@ class _EidWahdaAppState extends State<EidWahdaApp> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => AuthCubit(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => AuthCubit()),
+        BlocProvider(create: (_) => ProviderAuthCubit()),
+      ],
       child: MaterialApp(
         navigatorKey: navigatorKey,
         title: 'إيد واحدة',
@@ -92,7 +101,7 @@ class _EidWahdaAppState extends State<EidWahdaApp> {
         home: _isOffline
             ? Stack(
                 children: [
-                  const SplashScreen(),
+                  const AppShell(),
                   Positioned(
                     left: 0,
                     right: 0,
@@ -120,17 +129,40 @@ class _EidWahdaAppState extends State<EidWahdaApp> {
                   ),
                 ],
               )
-            : const SplashScreen(),
+            : const AppShell(),
         routes: {
+          // Customer routes
           AppRoutes.login: (_) => const LoginScreen(),
-          AppRoutes.otp: (_) => const OtpScreen(),
           AppRoutes.home: (_) => const HomeScreen(),
           AppRoutes.newOrder: (_) => const NewOrderScreen(),
           AppRoutes.orderTracking: (_) => const OrderTrackingScreen(),
           AppRoutes.orderHistory: (_) => const OrderHistoryScreen(),
           AppRoutes.profile: (_) => const ProfileScreen(),
+          // Provider routes
+          AppRoutes.providerHome: (_) => const ProviderHomeScreen(),
+          AppRoutes.providerOrders: (_) => const ProviderOrdersScreen(),
+          AppRoutes.providerEarnings: (_) => const ProviderEarningsScreen(),
+          AppRoutes.providerProfile: (_) => const ProviderProfileScreen(),
         },
       ),
     );
+  }
+}
+
+class AppShell extends StatelessWidget {
+  const AppShell({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final authState = context.watch<AuthCubit>().state;
+    final providerState = context.watch<ProviderAuthCubit>().state;
+
+    if (providerState is ProviderAuthVerified) {
+      return const ProviderHomeScreen();
+    }
+    if (authState is AuthVerified) {
+      return const SplashScreen();
+    }
+    return const LoginScreen();
   }
 }

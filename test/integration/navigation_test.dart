@@ -5,12 +5,15 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:app_delivery/core/routes.dart';
 import 'package:app_delivery/core/theme.dart';
-import 'package:app_delivery/features/auth/cubit/auth_cubit.dart';
 import 'package:app_delivery/features/home/screens/home_screen.dart';
+import '../helpers/mocks.dart';
 
 Widget createIntegrationApp() {
-  return BlocProvider(
-    create: (_) => AuthCubit(),
+  return MultiBlocProvider(
+    providers: [
+      BlocProvider.value(value: createMockAuthCubit()),
+      BlocProvider.value(value: createMockProviderAuthCubit()),
+    ],
     child: MaterialApp(
       locale: const Locale('ar'),
       supportedLocales: const [Locale('ar')],
@@ -37,7 +40,6 @@ Widget createIntegrationApp() {
               body: Center(child: Text('حسابي')),
             ),
         AppRoutes.login: (_) => const Scaffold(),
-        AppRoutes.otp: (_) => const Scaffold(),
       },
     ),
   );

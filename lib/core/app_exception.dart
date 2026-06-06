@@ -16,6 +16,36 @@ class AppException implements Exception {
 }
 
 String firestoreErrorMessage(Object e) {
+  if (e is FirebaseAuthException) {
+    switch (e.code) {
+      case 'network-request-failed':
+        return 'تحقق من اتصالك بالإنترنت وحاول مرة أخرى';
+      case 'invalid-phone-number':
+        return 'رقم الهاتف غير صحيح';
+      case 'invalid-verification-code':
+        return 'رمز التحقق غير صحيح';
+      case 'session-expired':
+        return 'انتهت صلاحية الجلسة، أعد إرسال رمز التحقق';
+      case 'too-many-requests':
+        return 'طلبات كثيرة جداً، حاول بعد قليل';
+      case 'user-not-found':
+        return 'لم يتم العثور على مستخدم بهذا البريد الإلكتروني';
+      case 'wrong-password':
+        return 'كلمة المرور غير صحيحة';
+      case 'email-already-in-use':
+        return 'البريد الإلكتروني مستخدم بالفعل';
+      case 'weak-password':
+        return 'كلمة المرور ضعيفة جداً';
+      case 'invalid-email':
+        return 'البريد الإلكتروني غير صحيح';
+      case 'user-disabled':
+        return 'تم تعطيل هذا الحساب';
+      case 'operation-not-allowed':
+        return 'تسجيل الدخول بهذه الطريقة غير متاح';
+      default:
+        return 'حدث خطأ في تسجيل الدخول';
+    }
+  }
   if (e is FirebaseException) {
     switch (e.code) {
       case 'permission-denied':
@@ -36,22 +66,6 @@ String firestoreErrorMessage(Object e) {
         return 'القيمة خارج النطاق المسموح';
       default:
         return 'حدث خطأ في قاعدة البيانات';
-    }
-  }
-  if (e is FirebaseAuthException) {
-    switch (e.code) {
-      case 'network-request-failed':
-        return 'تحقق من اتصالك بالإنترنت وحاول مرة أخرى';
-      case 'invalid-phone-number':
-        return 'رقم الهاتف غير صحيح';
-      case 'invalid-verification-code':
-        return 'رمز التحقق غير صحيح';
-      case 'session-expired':
-        return 'انتهت صلاحية الجلسة، أعد إرسال رمز التحقق';
-      case 'too-many-requests':
-        return 'طلبات كثيرة جداً، حاول بعد قليل';
-      default:
-        return 'حدث خطأ في تسجيل الدخول';
     }
   }
   final msg = e.toString();

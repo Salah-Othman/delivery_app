@@ -3,14 +3,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:app_delivery/features/auth/cubit/auth_cubit.dart';
 import 'package:app_delivery/features/orders/screens/order_history_screen.dart';
 import 'package:app_delivery/core/theme.dart';
 import 'package:app_delivery/core/routes.dart';
+import '../helpers/mocks.dart';
 
 Widget createTestApp(Widget child) {
-  return BlocProvider(
-    create: (_) => AuthCubit(),
+  return BlocProvider.value(
+    value: createMockAuthCubit(),
     child: MaterialApp(
       locale: const Locale('ar'),
       supportedLocales: const [Locale('ar')],

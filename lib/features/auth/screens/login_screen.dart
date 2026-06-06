@@ -3,8 +3,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/error_utils.dart';
 import '../../../core/routes.dart';
+import '../../../providers/cubit/provider_auth_cubit.dart';
+import '../../../providers/cubit/provider_auth_state.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
+
+enum _LoginRole { customer, provider }
+enum _AuthMode { signIn, signUp }
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,26 +19,48 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _phoneController = TextEditingController();
+  _LoginRole _selectedRole = _LoginRole.customer;
+  _AuthMode _authMode = _AuthMode.signIn;
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _nameController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
-    _phoneController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _nameController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return BlocListener<AuthCubit, AuthState>(
-      listener: (context, state) {
-        if (state is AuthCodeSent) {
-          Navigator.pushNamed(context, AppRoutes.otp, arguments: state.phone);
-        } else if (state is AuthError) {
-          _showSnackBar(context, state.message);
-        }
-      },
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<AuthCubit, AuthState>(
+          listener: (context, state) {
+            if (state is AuthError && _selectedRole == _LoginRole.customer) {
+              showErrorSnackBar(context, state.message);
+            } else if (state is AuthVerified && _selectedRole == _LoginRole.customer) {
+              Navigator.pushNamedAndRemoveUntil(context, AppRoutes.home, (_) => false);
+            }
+          },
+        ),
+        BlocListener<ProviderAuthCubit, ProviderAuthState>(
+          listener: (context, state) {
+            if (state is ProviderAuthVerified) {
+              Navigator.pushNamedAndRemoveUntil(context, AppRoutes.providerHome, (_) => false);
+            } else if (state is ProviderUnregistered) {
+              _showUnregisteredDialog(context);
+            } else if (state is ProviderAuthError) {
+              showErrorSnackBar(context, state.message);
+            }
+          },
+        ),
+      ],
       child: Scaffold(
         body: SafeArea(
           child: Form(
@@ -41,7 +68,7 @@ class _LoginScreenState extends State<LoginScreen> {
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               children: [
-                const SizedBox(height: 80),
+                const SizedBox(height: 60),
                 Container(
                   width: 88,
                   height: 88,
@@ -72,36 +99,121 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 48),
+                const SizedBox(height: 32),
+                SegmentedButton<_LoginRole>(
+                  segments: const [
+                    ButtonSegment(
+                      value: _LoginRole.customer,
+                      label: Text('عميل'),
+                      icon: Icon(Icons.person_outline),
+                    ),
+                    ButtonSegment(
+                      value: _LoginRole.provider,
+                      label: Text('مقدم خدمة'),
+                      icon: Icon(Icons.handyman_outlined),
+                    ),
+                  ],
+                  selected: {_selectedRole},
+                  onSelectionChanged: (v) {
+                    setState(() {
+                      _selectedRole = v.first;
+                      _clearFields();
+                    });
+                  },
+                  style: ButtonStyle(
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _AuthModeToggle(
+                        label: 'تسجيل دخول',
+                        selected: _authMode == _AuthMode.signIn,
+                        onTap: () => setState(() => _authMode = _AuthMode.signIn),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _AuthModeToggle(
+                        label: 'إنشاء حساب',
+                        selected: _authMode == _AuthMode.signUp,
+                        onTap: () => setState(() => _authMode = _AuthMode.signUp),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                if (_authMode == _AuthMode.signUp)
+                  TextFormField(
+                    controller: _nameController,
+                    textDirection: TextDirection.rtl,
+                    keyboardType: TextInputType.text,
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) return 'برجاء إدخال الاسم';
+                      return null;
+                    },
+                    decoration: InputDecoration(
+                      labelText: 'الاسم',
+                      prefixIcon: const Icon(Icons.person_outline),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                if (_authMode == _AuthMode.signUp) const SizedBox(height: 16),
                 TextFormField(
-                  controller: _phoneController,
+                  controller: _emailController,
                   textDirection: TextDirection.ltr,
-                  textAlign: TextAlign.center,
-                  keyboardType: TextInputType.phone,
-                  maxLength: 11,
+                  keyboardType: TextInputType.emailAddress,
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'برجاء إدخال رقم الموبايل';
-                    if (v.trim().length < 11) return 'رقم غير صحيح (يجب أن يكون 11 رقم)';
+                    if (v == null || v.trim().isEmpty) return 'برجاء إدخال البريد الإلكتروني';
+                    if (!v.contains('@')) return 'بريد إلكتروني غير صحيح';
                     return null;
                   },
                   decoration: InputDecoration(
-                    hintText: '01001234567',
-                    counterText: '',
-                    prefixIcon: const Icon(Icons.phone_android_rounded),
+                    labelText: 'البريد الإلكتروني',
+                    prefixIcon: const Icon(Icons.email_outlined),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _passwordController,
+                  textDirection: TextDirection.ltr,
+                  obscureText: _obscurePassword,
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'برجاء إدخال كلمة المرور';
+                    if (v.length < 6) return 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
+                    return null;
+                  },
+                  decoration: InputDecoration(
+                    labelText: 'كلمة المرور',
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
+                      ),
+                      onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 24),
                 BlocBuilder<AuthCubit, AuthState>(
-                  builder: (context, state) {
-                    final loading = state is AuthLoading;
+                  builder: (context, customerState) {
+                    final loading = _selectedRole == _LoginRole.customer
+                        ? customerState is AuthLoading
+                        : context.watch<ProviderAuthCubit>().state is ProviderAuthLoading;
                     return FilledButton(
-                      onPressed: loading
-                          ? null
-                          : () {
-                              if (!_formKey.currentState!.validate()) return;
-                              final phone = _phoneController.text.trim();
-                              context.read<AuthCubit>().signInWithPhone('+2$phone');
-                            },
+                      onPressed: loading ? null : _onSubmit,
                       child: loading
                           ? const SizedBox(
                               width: 20,
@@ -111,47 +223,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                 color: Colors.white,
                               ),
                             )
-                          : const Text('تسجيل الدخول برقم الموبايل'),
+                          : Text(
+                              _authMode == _AuthMode.signIn
+                                  ? 'تسجيل الدخول'
+                                  : 'إنشاء حساب',
+                            ),
                     );
                   },
                 ),
-                const SizedBox(height: 32),
-                Row(
-                  children: [
-                    Expanded(child: Divider(color: theme.colorScheme.outlineVariant)),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Text(
-                        'أو',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                    Expanded(child: Divider(color: theme.colorScheme.outlineVariant)),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                BlocBuilder<AuthCubit, AuthState>(
-                  builder: (context, state) {
-                    final loading = state is AuthLoading;
-                    return OutlinedButton.icon(
-                      onPressed: loading
-                          ? null
-                          : () => context.read<AuthCubit>().signInWithGoogle(),
-                      icon: Image.asset(
-                        'assets/google_logo.png',
-                        height: 20,
-                        errorBuilder: (_, _, _) => const Icon(
-                          Icons.g_mobiledata_rounded,
-                          size: 28,
-                        ),
-                      ),
-                      label: const Text('تسجيل الدخول بواسطة Google'),
-                    );
-                  },
-                ),
-                const SizedBox(height: 40),
               ],
             ),
           ),
@@ -160,7 +239,98 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  void _showSnackBar(BuildContext context, String message) {
-    showErrorSnackBar(context, message);
+  void _onSubmit() {
+    if (!_formKey.currentState!.validate()) return;
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    if (_selectedRole == _LoginRole.customer) {
+      if (_authMode == _AuthMode.signIn) {
+        context.read<AuthCubit>().signIn(email, password);
+      } else {
+        final name = _nameController.text.trim();
+        context.read<AuthCubit>().signUp(email, password, name);
+      }
+    } else {
+      if (_authMode != _AuthMode.signIn) {
+        showErrorSnackBar(context, 'مقدمي الخدمة يتم تسجيلهم بواسطة الإدارة');
+        return;
+      }
+      context.read<ProviderAuthCubit>().signIn(email, password);
+    }
+  }
+
+  void _clearFields() {
+    _emailController.clear();
+    _passwordController.clear();
+    _nameController.clear();
+    _authMode = _AuthMode.signIn;
+  }
+
+  void _showUnregisteredDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: const Text('غير مسجل'),
+        content: const Text(
+          'هذا البريد الإلكتروني غير مسجل كمقدم خدمة في التطبيق. '
+          'يرجى التواصل مع الإدارة لتسجيلك كمقدم خدمة.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              context.read<ProviderAuthCubit>().reset();
+            },
+            child: const Text('حسناً'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AuthModeToggle extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _AuthModeToggle({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: selected
+              ? Theme.of(context).colorScheme.primaryContainer
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: selected
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.outlineVariant,
+          ),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+              color: selected
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

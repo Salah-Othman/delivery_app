@@ -6,6 +6,7 @@ void main() {
   group('ProviderModel', () {
     final provider = ProviderModel(
       id: 'provider_1',
+      email: 'mohamed@example.com',
       phone: '01001234567',
       name: 'محمد حسن',
       services: ['سباكة', 'كهرباء'],
@@ -21,6 +22,7 @@ void main() {
       final map = provider.toMap();
 
       expect(map['id'], 'provider_1');
+      expect(map['email'], 'mohamed@example.com');
       expect(map['phone'], '01001234567');
       expect(map['name'], 'محمد حسن');
       expect(map['services'], ['سباكة', 'كهرباء']);
@@ -35,6 +37,7 @@ void main() {
       final restored = ProviderModel.fromMap(map, 'provider_1');
 
       expect(restored.id, 'provider_1');
+      expect(restored.email, 'mohamed@example.com');
       expect(restored.name, 'محمد حسن');
       expect(restored.services, ['سباكة', 'كهرباء']);
       expect(restored.available, true);
@@ -47,6 +50,7 @@ void main() {
       final restored = ProviderModel.fromMap({}, 'provider_2');
 
       expect(restored.id, 'provider_2');
+      expect(restored.email, '');
       expect(restored.available, true);
       expect(restored.services, isEmpty);
       expect(restored.rating, 0);
