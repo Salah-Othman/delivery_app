@@ -46,13 +46,15 @@
 - [ ] تجربة المستخدم على 3G محاكى
 
 ### المرحلة 3: الإعداد الفني (الأسبوع 5-8)
-- [ ] Firebase Project — تفعيل Auth (Phone OTP)
+- [ ] Firebase Project — تفعيل Auth (Phone OTP) + Crashlytics
 - [ ] Firestore — إنشاء الـ Collections (users, providers, orders, categories, reviews)
 - [ ] Cloud Functions — ترتيب الطلبات، الإشعارات، حساب العمولة
 - [ ] Firebase Storage — رفع الصور
 
 ### المرحلة 4: تطوير التطبيق (الأسبوع 9-16)
-- [ ] تطبيق العميل: شاشة الدخول، الخدمات، الطلب، التتبع، التقييم
+- [x] تطبيق العميل: شاشة الدخول، الخدمات، الطلب، التتبع، التقييم
+- [x] نظام إدارة الأخطاء: `error_utils.dart` + `app_exception.dart` + Crashlytics
+- [x] إشعارات FCM مع معالجة آمنة للأخطاء
 - [ ] تطبيق مقدم الخدمة: إدارة الطلبات، الموقع، الأرباح
 - [ ] لوحة التحكم (Admin Dashboard): إدارة المستخدمين والطلبات
 - [ ] الدفع: كاش + فودافون كاش
@@ -87,6 +89,7 @@
     "lng": 30.8389
   },
   "orderCount": 0,
+  "fcmToken": "string",
   "createdAt": Timestamp
 }
 ```
@@ -119,6 +122,7 @@
   "price": 150,
   "paymentMethod": "cash" | "vodafone_cash",
   "userLocation": GeoPoint(27.93, 30.84),
+  "providerLocation": GeoPoint,
   "createdAt": Timestamp,
   "completedAt": Timestamp
 }
@@ -151,23 +155,23 @@
 
 ## 5. المميزات كاملة (Full Feature List)
 
-### MVP (الإصدار الأول — الأسبوع 9-16)
+### MVP (الإصدار الأول)
 
 #### تطبيق العميل
-| الميزة | الأهمية |
-|--------|---------|
-| تسجيل الدخول برقم الهاتف + OTP | ضروري — المصريين مش بيعملوا إيميل |
-| واجهة عربية 100% (RTL) | لا بديل عنه |
-| تصنيفات الخدمات (تكييف، سباكة، كهرباء، نجارة، دهان) | يسهل الوصول |
-| طلب خدمة: اختيار → وصف → تأكيد السعر → متابعة | التدفق الأساسي |
-| اختيار الموقع (خريطة أو عنوان نصي) | تحديد المكان |
-| دفع كاش عند التوصيل | 70%+ بيفضلوا الكاش |
-| دفع عبر فودافون كاش | بديل رقمي |
-| تقييم مقدم الخدمة (1-5 نجوم) | بناء الثقة |
-| عرض الطلبات السابقة | للمتابعة |
-| إشعارات (Push Notifications) | تحديثات الطلب |
-| حجم تطبيق خفيف < 25MB | أجهزة متوسطة |
-| تحسين أداء على 3G | الإنترنت مش دايمًا قوي |
+| الميزة | الأهمية | الحالة |
+|--------|---------|--------|
+| تسجيل الدخول برقم الهاتف + OTP | ضروري | ✅ |
+| واجهة عربية 100% (RTL) | لا بديل عنه | ✅ |
+| تصنيفات الخدمات | يسهل الوصول | ✅ |
+| طلب خدمة مع اختيار الموقع | التدفق الأساسي | ✅ |
+| دفع كاش + فودافون كاش | 70%+ بيفضلوا الكاش | ✅ |
+| تقييم مقدم الخدمة | بناء الثقة | ✅ |
+| عرض الطلبات السابقة | للمتابعة | ✅ |
+| إشعارات Push (FCM) | تحديثات الطلب | ✅ |
+| نظام إدارة الأخطاء (Error Handling) | استقرار التطبيق | ✅ |
+| Crashlytics | تتبع الأعطال | ✅ |
+| حجم تطبيق خفيف < 25MB | أجهزة متوسطة | |
+| تحسين أداء على 3G | الإنترنت مش دايمًا قوي | |
 
 #### تطبيق مقدم الخدمة
 | الميزة | الأهمية |
@@ -247,10 +251,14 @@
 ```
 app_delivery/
 ├── lib/
-│   ├── main.dart              # مدخل التطبيق (العميل)
+│   ├── main.dart              # مدخل التطبيق + Crashlytics error handlers
 │   ├── core/
 │   │   ├── theme.dart         # الألوان والخطوط
-│   │   └── constants.dart     # الثوابت
+│   │   ├── constants.dart     # الثوابت
+│   │   ├── routes.dart
+│   │   ├── error_utils.dart   # showErrorSnackBar / showSuccessSnackBar / logError
+│   │   ├── app_exception.dart # AppException sealed class
+│   │   └── firebase_init.dart
 │   ├── models/
 │   │   ├── user_model.dart
 │   │   ├── provider_model.dart
@@ -258,24 +266,24 @@ app_delivery/
 │   │   └── review_model.dart
 │   ├── features/
 │   │   ├── auth/
-│   │   │   ├── screens/
-│   │   │   ├── providers/
-│   │   │   └── services/
+│   │   │   ├── cubit/         # auth_cubit, auth_state
+│   │   │   ├── screens/      # login_screen, otp_screen
+│   │   │   └── services/     # auth_service
 │   │   ├── orders/
-│   │   │   ├── screens/
-│   │   │   └── .../
-│   │   ├── services/
-│   │   │   └── .../
+│   │   │   ├── screens/      # new_order, order_tracking, order_history
+│   │   │   └── services/     # order_service
+│   │   ├── notifications/
+│   │   │   └── services/     # notification_service (FCM)
+│   │   ├── services/         # location_service, connectivity_service
 │   │   └── payments/
-│   │       └── .../
-│   └── providers/
-│       ├── main.dart
-│       └── features/
-├── test/
+│   └── shared/
+│       └── widgets/          # app_error_widget, empty_state_widget, loading_widget
+├── test/                     # unit + widget + integration tests
 ├── android/
 ├── ios/
 ├── pubspec.yaml
-└── AGENTS.md
+├── AGENTS.md
+└── README.md
 ```
 
 ---
@@ -291,7 +299,9 @@ app_delivery/
 | Cloud Functions | منطق الخادم (المطابقة، الإشعارات) | مجاني (حتى 2M/شهر) |
 | Firebase Storage | رفع الصور | مجاني (حتى 5GB) |
 | Firebase Cloud Messaging | الإشعارات | مجاني |
-| Google Maps | التتبع والموقع | ~$200 رصيد مجاني/شهر |
+| Firebase Crashlytics | تتبع الأعطال | مجاني |
+| Flutter BLoC | إدارة الحالة | مجاني |
+| Flutter Map (OpenStreetMap) | الخرائط والموقع | مجاني |
 | Vodafone Cash API | الدفع الرقمي | نسبة مئوية |
 
 ---
@@ -305,6 +315,7 @@ app_delivery/
 | الإنترنت ضعيف في المنطقة | التطبيق يشتغل على 3G، حجمه صغير، يدعم Offline جزئي |
 | المنافسة من محلات الصيانة التقليدية | ركز على السرعة والتنظيم — "سباك في 30 دقيقة" |
 | معدل الدوران (Churn) عالي | تابع العملاء على واتساب، مش بس إشعارات |
+| أعطال وتوقفات غير متوقعة | Crashlytics + error handling موحد لرصد المشاكل مبكرًا |
 
 ---
 
@@ -318,6 +329,7 @@ app_delivery/
 | وقت استجابة الطلب | < 5 دقائق | < 3 دقائق |
 | نسبة إكمال الطلب | 80%+ | 90%+ |
 | العملاء المتكررين | 30%+ | 50%+ |
+| معدل تعطل التطبيق (Crash-free) | 99.5%+ | 99.9%+ |
 
 ---
 

@@ -1,17 +1,34 @@
-# app_delivery
+# إيد واحدة (Eid Wahda)
 
-A new Flutter project.
+تطبيق سوبر أندرويد يقدم خدمات الصيانة المنزلية والتوصيل في أبو قرقاص، المنيا.
 
-## Getting Started
+## المميزات
+- طلب خدمات الصيانة (سباكة، كهرباء، تكييف، نجارة، دهان)
+- خدمة التوصيل من المحلات
+- متابعة الطلب في الوقت الفعلي
+- دفع كاش أو فودافون كاش
+- تقييم مقدم الخدمة
 
-This project is a starting point for a Flutter application.
+## التقنيات
+- **Flutter** (Android first, iOS later)
+- **Firebase** (Auth, Firestore, Functions, Storage, Messaging, Crashlytics)
+- **Flutter BLoC** for state management
 
-A few resources to get you started if this is your first Flutter project:
+## التطوير
+```bash
+flutter pub get
+flutter analyze
+flutter test
+flutter run
+flutter build apk --release
+```
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## هيكل المشروع
+```
+lib/
+├── main.dart
+├── core/          # theme, constants, routes, error_utils, app_exception
+├── features/      # auth, orders, notifications, services, profile
+├── models/        # user, provider, order, review, category
+└── shared/        # widgets
+```
